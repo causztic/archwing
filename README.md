@@ -56,17 +56,30 @@ The Dapp should perform the following tasks automatically.
 
 
 # Requirements
-- Node v11
-- Python v2.7.14 (for install scripts)
-- NPM v6
-- Metamask
-- Ganache: `npm install ganache-cli` or download Ganache GUI
-- Truffle: `npm install truffle -g`
+| Software       | Description                                                                                       |
+|----------------|---------------------------------------------------------------------------------------------------|
+| Node v11       | We recommend [node version manager](https://github.com/creationix/nvm) to change version          |
+| NPM v6         | Used to install other necessary modules                                                           |
+| Python v2.7.14 | Used in `npm install`, we recommend using [pyenv](https://github.com/pyenv/pyenv) to install      |
+| Metamask       | Ethereum account management, we recommend the Chrome plugin [here](https://metamask.io/)          |
+| Ganache        | Private blockchain, use `npm install -g ganache-cli` for CLI, or [download here] for GUI          |
+| Truffle        | Ethereum development suite, use `npm install -g truffle` to install                               |
 
 
 # Setup
+If you are using node version manager,
 ```sh
-nvm use 11  # if you are using node version manager
+nvm install 11
+nvm use 11
+```
+
+If you are using pyenv,
+```sh
+pyenv install -v 2.7.14
+```
+
+To start up the server and client,
+```sh
 npm install
 ganache-cli  # or start up Ganache GUI
 truffle compile
