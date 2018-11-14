@@ -7,7 +7,7 @@ An Ethereum distributed app that manages insurance for travelers.
 | Node v11       | We recommend [node version manager](https://github.com/creationix/nvm) to change version          |
 | NPM v6         | Used to install other necessary modules                                                           |
 | Python v2.7.14 | Used in `npm install`, we recommend using [pyenv](https://github.com/pyenv/pyenv) to install      |
-| Metamask       | Ethereum account management, we recommend the Chrome plugin [here](https://metamask.io/)          |
+| Metamask       | Ethereum wallet, we recommend the Chrome plugin [here](https://metamask.io/)                      |
 | Ganache        | Private blockchain, use `npm install -g ganache-cli` for CLI, or [download here] for GUI          |
 | Truffle        | Ethereum development suite, use `npm install -g truffle` to install                               |
 
