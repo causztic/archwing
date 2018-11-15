@@ -1,0 +1,44 @@
+@font-face {
+  font-family: 'Futura PT';
+  src: url('../fonts/FuturaPT/FuturaPT-Medium.eot');
+  src: url('../fonts/FuturaPT/FuturaPT-Medium.eot?#iefix') format('embedded-opentype'),
+      url('../fonts/FuturaPT/FuturaPT-Medium.woff2') format('woff2'),
+      url('../fonts/FuturaPT/FuturaPT-Medium.woff') format('woff'),
+      url('../fonts/FuturaPT/FuturaPT-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Futura PT';
+  src: url('../fonts/FuturaPT/FuturaPT-Light.eot');
+  src: url('../fonts/FuturaPT/FuturaPT-Light.eot?#iefix') format('embedded-opentype'),
+      url('../fonts/FuturaPT/FuturaPT-Light.woff2') format('woff2'),
+      url('../fonts/FuturaPT/FuturaPT-Light.woff') format('woff'),
+      url('../fonts/FuturaPT/FuturaPT-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Futura PT Demi';
+  src: url('../fonts/FuturaPT/FuturaPT-Demi.eot');
+  src: url('../fonts/FuturaPT/FuturaPT-Demi.eot?#iefix') format('embedded-opentype'),
+      url('../fonts/FuturaPT/FuturaPT-Demi.woff2') format('woff2'),
+      url('../fonts/FuturaPT/FuturaPT-Demi.woff') format('woff'),
+      url('../fonts/FuturaPT/FuturaPT-Demi.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Futura PT Book';
+  src: url('../fonts/FuturaPT/FuturaPT-Book.eot');
+  src: url('../fonts/FuturaPT/FuturaPT-Book.eot?#iefix') format('embedded-opentype'),
+      url('../fonts/FuturaPT/FuturaPT-Book.woff2') format('woff2'),
+      url('../fonts/FuturaPT/FuturaPT-Book.woff') format('woff'),
+      url('../fonts/FuturaPT/FuturaPT-Book.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+

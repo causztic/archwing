@@ -1,0 +1,68 @@
+@import "sass/variables"
+
+/* PAGE */
+body
+  background-color: $denim
+
+body, .pure-g [class*=pure-u]
+  font-family: 'Open Sans', sans-serif
+
+.hero-container
+  background-color: $screen
+  height: 50vh
+  display: flex
+  align-items: center
+  justify-content: center
+  .hero
+    text-align: center
+    background-color: $white
+    h1
+      margin-bottom: 0
+    p
+      color: $screen
+      font-weight: bold
+      margin-top: 0
+
+h1.header
+  font-family: 'Futura PT', sans-serif
+  font-weight: bold
+
+.container
+  box-sizing: border-box
+  width: calc(100% - 60px)
+  padding: 45px 20px
+  margin: 0 auto
+
+ul
+  list-style-type: none
+  padding-left: 0
+
+  li:not(:last-child)
+    margin-bottom: 15px
+
+/* LOADING SCREEN */
+
+.loading-screen
+  opacity: 1
+  visibility: visible
+  transition: all .25s ease-in-out
+  &.loaded
+    opacity: 0
+    visibility: hidden
+
+
+/* FORMS */
+
+.pure-form
+  display: inline-block
+
+/* COLUMN */
+.column
+  background-color: $steel
+  h2
+    text-align: center
+    color: $white
+    font-family: 'Futura PT', sans-serif
+
+.alternate-column
+  background-color: $yellow
