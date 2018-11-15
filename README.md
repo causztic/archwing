@@ -37,7 +37,7 @@ After starting up the server:
 
 1. Head to localhost:3000 and logout from any existing Metamask account
 
-2. Switch network to private network eg. localhost:8545 (Ganache's default)
+2. Switch network to private network eg. localhost:8545 (Ganache CLI default) or localhost:7545 (Ganache GUI default)
     <br><img src="images/metamask_networks.png" width="200">
 
 3. Restore account in Metamask with Ganache's mnemonic 
