@@ -2,14 +2,14 @@
 
 /* PAGE */
 body
-  background-color: $denim
+  background-color: $white
 
 body, .pure-g [class*=pure-u]
   font-family: 'Open Sans', sans-serif
 
 .hero-container
-  background-color: $screen
-  height: 50vh
+  background-color: rgba($screen, 0.6)
+  height: 40vh
   display: flex
   align-items: center
   justify-content: center
@@ -56,13 +56,36 @@ ul
 .pure-form
   display: inline-block
 
-/* COLUMN */
-.column
-  background-color: $steel
-  h2
-    text-align: center
-    color: $white
-    font-family: 'Futura PT', sans-serif
+.pure-button
+  &:hover, &:active
+    background-image: none
+    background-color: $screen
 
-.alternate-column
-  background-color: $yellow
+/* COLUMN */
+.actions
+  .column
+    background-color: $steel
+    text-align: center
+    min-height: 250px
+    &:nth-child(2)
+      background-color: $yellow
+      h3
+        color: $steel
+    &:last-child
+      background-color: $denim
+    h2
+      text-align: center
+      color: $white
+      font-family: 'Futura PT', sans-serif
+    p
+      padding: 15px
+      color: $screen
+    h3
+      font-size: 0.75em
+      text-align: center
+      color: $screen
+      padding-bottom: 1em
+    .pure-button
+      margin: 0 0 15px 12.5%
+      width: 75%
+      display: block
