@@ -15,6 +15,10 @@ class App extends Component {
     return (
       <div className="App">
         <Route exact path="/" component={HomeContainer}/>
+        <footer>
+          All Rights Reserved © 2018.
+          <a href="https://github.com/causztic/archwing">Source Code</a>
+        </footer>
       </div>
     );
   }
