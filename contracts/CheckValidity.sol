@@ -11,7 +11,8 @@ contract CheckValidity is usingOraclize {
     constructor() public payable {}
 
     function __callback(bytes32, string result) public {
-        if (msg.sender != oraclize_cbAddress()) revert("wrong sender");
+        if (msg.sender != oraclize_cbAddress())
+            revert("Wrong sender");
         callback_result = result;
         emit LogResult(result);
     }
@@ -27,32 +28,39 @@ contract CheckValidity is usingOraclize {
         string destinationAirportCode, string scheduledArrivalDate) public payable {
         // endpoint is limited to 100 calls a day.
         if (oraclize_getPrice("computation") > address(this).balance) {
-            emit LogNewOraclizeQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
+            emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-            oraclize_query("computation",
-                ["QmdKK319Veha83h6AYgQqhx9YRsJ9MJE7y33oCXyZ4MqHE",
-                "POST",
-                "https://apigw.singaporeair.com/api/v3/flightstatus/getbynumber",
-                string(abi.encodePacked("{'headers': { 'content-type': 'application/json',",
-                    "'apikey':'", apikey,
-                    "'},",
-                    "'json':",
-                    "{'request': {",
-                    "'airlineCode':'", airlineCode,
-                    "',",
-                    "'flightNumber':'", flightNumber,
-                    "',",
-                    "'originAirportCode':'", originAirportCode,
-                    "',",
-                    "'scheduledDepartureDate':'", scheduledDepartureDate,
-                    "',",
-                    "'destinationAirportCode':'", destinationAirportCode,
-                    "',",
-                    "'scheduledArrivalDate':'", scheduledArrivalDate,
-                    "'},",
-                    "'clientUUID': 'TestIODocs'}}"))
-            ]);
+            oraclize_query(
+                "computation",
+                [
+                    "QmdKK319Veha83h6AYgQqhx9YRsJ9MJE7y33oCXyZ4MqHE",
+                    "POST",
+                    "https://apigw.singaporeair.com/api/v3/flightstatus/getbynumber",
+                    string(
+                        abi.encodePacked(
+                            "{'headers': { 'content-type': 'application/json',",
+                            "'apikey':'", apikey,
+                            "'},",
+                            "'json':",
+                            "{'request': {",
+                            "'airlineCode':'", airlineCode,
+                            "',",
+                            "'flightNumber':'", flightNumber,
+                            "',",
+                            "'originAirportCode':'", originAirportCode,
+                            "',",
+                            "'scheduledDepartureDate':'", scheduledDepartureDate,
+                            "',",
+                            "'destinationAirportCode':'", destinationAirportCode,
+                            "',",
+                            "'scheduledArrivalDate':'", scheduledArrivalDate,
+                            "'},",
+                            "'clientUUID': 'TestIODocs'}}"
+                        )
+                    )
+                ]
+            ); 
         }
     }
 }
