@@ -35,10 +35,10 @@ truffle migrate
 npm run start
 ```
 
-Ethereum-Bridge is needed for the Oraclize engineto access our private network.
+Ethereum-Bridge is needed for the Oraclize engine to access our private network.
 ```sh
 npm install -g ethereum-bridge
-ethereum-bridge --dev -H localhost:8545 -a 1
+ethereum-bridge --dev -H <ganache's host:port> -a 1
 ```
 
 After starting up the server:
