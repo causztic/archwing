@@ -28,10 +28,17 @@ pyenv install -v 2.7.14
 To start up the server and client,
 ```sh
 npm install
+cp .env.sample .env # fill in the configuration required.
 ganache-cli  # or start up Ganache GUI
 truffle compile
 truffle migrate
 npm run start
+```
+
+Ethereum-Bridge is needed for the Oraclize engineto access our private network.
+```sh
+npm install -g ethereum-bridge
+ethereum-bridge --dev -H localhost:8545 -a 1
 ```
 
 After starting up the server:
