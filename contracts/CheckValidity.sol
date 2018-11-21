@@ -8,7 +8,9 @@ contract CheckValidity is usingOraclize {
     event LogResult(string result);
     event LogNewOraclizeQuery(string description);
 
-    constructor() public payable {}
+    constructor() public payable {
+        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+    }
 
     function __callback(bytes32, string result) public {
         if (msg.sender != oraclize_cbAddress())
@@ -18,7 +20,6 @@ contract CheckValidity is usingOraclize {
     }
 
     function testCheckFlightDetails() public payable {
-        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
         checkFlightDetails("", "SQ", "950", "SIN", "2018-10-24", "CGK", "2018-10-24");
     }
 
