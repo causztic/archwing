@@ -1,10 +1,13 @@
 import React, { Component } from 'react'
-import { ContractForm, ContractData } from 'drizzle-react-components'
+import { ContractData } from 'drizzle-react-components'
 
 import bg from './plane-bg.jpg'
 import './Home.sass'
 
 class Home extends Component {
+  componentDidMount() {
+  }
+
   render() {
     return (
       <main className="container">
@@ -14,8 +17,6 @@ class Home extends Component {
             <div className="pure-u-1-2 hero">
               <h1 className="header">ARCHWING</h1>
               <p>Flight delay / cancellation insurance distribution app with smart contracts</p>
-              <ContractData contract="CheckValidity" method="callback_result" />
-              <ContractForm contract="CheckValidity" method="testCheckFlightDetails"/>
             </div>
           </div>
         <div className="pure-u-1-1 actions">
@@ -33,7 +34,11 @@ class Home extends Component {
           <div className="pure-u-1-1 pure-u-md-1-3 column">
             <h2>Loyalty Points</h2>
             <h3>Earn AWPoints for every plan you purchase with us.</h3>
-            <p>You currently have 0 AWPoints.</p>
+            <p>
+              You currently have
+              <ContractData contract="UserInfo" method="getPoints" />
+              AWPoints.
+            </p>
           </div>
         </div>
         </div>

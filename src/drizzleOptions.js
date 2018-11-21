@@ -1,4 +1,5 @@
 import CheckValidity from './../build/contracts/CheckValidity.json'
+import UserInfo from './../build/contracts/UserInfo.json'
 
 const drizzleOptions = {
   web3: {
@@ -10,6 +11,7 @@ const drizzleOptions = {
   },
   contracts: [
     CheckValidity,
+    UserInfo,
   ],
   events: {
     SimpleStorage: ['StorageSet']
