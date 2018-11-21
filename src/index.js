@@ -10,6 +10,8 @@ import { LoadingContainer } from 'drizzle-react-components'
 import { history, store } from './store'
 import drizzleOptions from './drizzleOptions'
 
+require('dotenv').config()
+
 ReactDOM.render((
     <DrizzleProvider options={drizzleOptions} store={store}>
       <LoadingContainer>

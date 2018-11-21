@@ -14,8 +14,8 @@ class Home extends Component {
             <div className="pure-u-1-2 hero">
               <h1 className="header">ARCHWING</h1>
               <p>Flight delay / cancellation insurance distribution app with smart contracts</p>
-              <ContractData contract="CheckValidity" method="results" />
-              <ContractForm contract="CheckValidity" method="checkFlightDetails"/>
+              <ContractData contract="CheckValidity" method="callback_result" />
+              <ContractForm contract="CheckValidity" method="testCheckFlightDetails"/>
             </div>
           </div>
         <div className="pure-u-1-1 actions">
