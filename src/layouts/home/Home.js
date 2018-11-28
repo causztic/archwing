@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import {BigNumber} from 'bignumber.js'
 
+import TicketModal from './_TicketModal'
 import bg from './plane-bg.jpg'
 import './Home.sass'
 
@@ -9,14 +10,30 @@ class Home extends Component {
   constructor(props, context) {
     super(props);
     this.contracts = context.drizzle.contracts;
-    this.state = { points: 0 }
+    this.state = {
+      points: 0,
+      showModal: false
+    }
+  }
+  
+  showModal = () => {
+    this.setState({ showModal: true });
+  }
+  
+  hideModal = () => {
+    this.setState({ showModal: false });
   }
 
   componentDidMount() {
     // create user and obtain loyalty points
-    this.setState( { userExists: this.contracts.UserInfo.methods.userExists.cacheCall() }, () => {
+    let userInfoMethods = this.contracts.UserInfo.methods
+    this.setState({
+      userExists: userInfoMethods.userExists.cacheCall()
+    }, () => {
       if (this.state.userExists) {
-        this.setState({ points: BigNumber(this.contracts.UserInfo.methods.getPoints.cacheCall()).toString(10) });
+        this.setState({
+          points: BigNumber(userInfoMethods.getPoints.cacheCall()).toString(10)
+        });
       } else {
         this.contracts.UserInfo.methods.createUser.cacheSend();
       }
@@ -43,8 +60,10 @@ class Home extends Component {
           <div className="pure-u-1-1 pure-u-md-1-3 column">
             <h2>Instant Coverage</h2>
             <h3>Get insured for single or round trips at affordable rates.</h3>
-            <a href="/" className="pure-button">Upload Ticket PDF</a>
-            <a href="/" className="pure-button">Upload Ticket from Camera</a>
+            <TicketModal show={this.state.showModal} handleClose={this.hideModal} />
+            <p>
+              <button className="pure-button" onClick={this.showModal}>Get started now!</button>
+            </p>
           </div>
           <div className="pure-u-1-1 pure-u-md-1-3 column">
             <h2>Loyalty Points</h2>
