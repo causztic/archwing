@@ -26,6 +26,15 @@ contract UserInfo {
         });
     }
 
+    function removePoints(uint256 points) public {
+        // TODO: restrict this to contract-contract only
+        require(points > 0, "Given points is non-positive");
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+
+        user.points -= points;
+    }
+
     function addPoints(uint256 points) public {
         // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
