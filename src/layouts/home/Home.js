@@ -1,11 +1,26 @@
 import React, { Component } from 'react'
-import { ContractData } from 'drizzle-react-components'
+import PropTypes from 'prop-types'
+import {BigNumber} from 'bignumber.js'
 
 import bg from './plane-bg.jpg'
 import './Home.sass'
 
 class Home extends Component {
+  constructor(props, context) {
+    super(props);
+    this.contracts = context.drizzle.contracts;
+    this.state = { points: 0 }
+  }
+
   componentDidMount() {
+    // create user and obtain loyalty points
+    this.setState( { userExists: this.contracts.UserInfo.methods.userExists.cacheCall() }, () => {
+      if (this.state.userExists) {
+        this.setState({ points: BigNumber(this.contracts.UserInfo.methods.getPoints.cacheCall()).toString(10) });
+      } else {
+        this.contracts.UserInfo.methods.createUser.cacheSend();
+      }
+    });
   }
 
   render() {
@@ -35,9 +50,7 @@ class Home extends Component {
             <h2>Loyalty Points</h2>
             <h3>Earn AWPoints for every plan you purchase with us.</h3>
             <p>
-              You currently have
-              <ContractData contract="UserInfo" method="getPoints" />
-              AWPoints.
+              You currently have {this.state.points} AWPoints.
             </p>
           </div>
         </div>
@@ -45,6 +58,10 @@ class Home extends Component {
       </main>
     )
   }
+}
+
+Home.contextTypes = {
+  drizzle: PropTypes.object
 }
 
 export default Home

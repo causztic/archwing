@@ -15,6 +15,11 @@ contract UserInfo {
         return user.points;
     }
 
+    function userExists() public view returns (bool) {
+        User storage user = users[msg.sender];
+        return user.set;
+    }
+
     function createUser() public {
         User storage user = users[msg.sender];
         // Check that the user did not already exist:
