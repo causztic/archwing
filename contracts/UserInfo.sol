@@ -1,7 +1,12 @@
 pragma solidity ^0.4.24;
+import { Coverage } from "./Coverage.sol";
 
 contract UserInfo {
     struct User {
+        mapping(uint => Coverage.Insurance) insurances;
+        uint insuranceSize;
+        // limitation: Copying of type struct Coverage.Insurance memory[] memory to storage not yet supported
+        // Coverage.Insurance[] insurances;
         uint256 points;
         bool set;
     }
@@ -26,6 +31,7 @@ contract UserInfo {
         require(!user.set, "User is already set");
         // Store the user
         users[msg.sender] = User({
+            insuranceSize: 0,
             points: 0,
             set: true
         });
