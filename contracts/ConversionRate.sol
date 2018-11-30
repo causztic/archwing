@@ -22,14 +22,18 @@ contract ConversionRate is usingOraclize {
 
         emit LogCallback(price, lastUpdated);
     }
+    
+    function getConversionToSGD() public payable returns (string) {
+        return price;
+    }
 
     // limitation -> API Key is exposed. We could encrypt the headers instead
-    function getConversionToSGD() public payable {
+    function updateConversionToSGD() public payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-            oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=SGD)");
+            oraclize_query("URL", "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=SGD");
         }
     }
 }

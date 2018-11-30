@@ -19,12 +19,12 @@ contract FlightValidity is usingOraclize {
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(string bookingNumber) {
+    function checkFlightDetails(string bookingNumber) public {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             // TODO: call mock endpoint
-            bytes32 queryId =oraclize_query("URL", "json(ENDPOINT_URL_HERE)");
+            bytes32 queryId = oraclize_query("URL", "json(ENDPOINT_URL_HERE)");
             flightMappings[queryId] = address(this);
         }
     }
