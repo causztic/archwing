@@ -27,7 +27,6 @@ contract ConversionRate is usingOraclize {
         return price;
     }
 
-    // limitation -> API Key is exposed. We could encrypt the headers instead
     function updateConversionToSGD() public payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
