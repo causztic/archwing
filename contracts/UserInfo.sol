@@ -1,8 +1,7 @@
 pragma solidity ^0.4.24;
-import "oraclize-api/usingOraclize.sol";
 import { Coverage } from "./Coverage.sol";
 
-contract UserInfo is usingOraclize {
+contract UserInfo {
     struct User {
         mapping(uint => Coverage.Insurance) insurances;
         uint insuranceSize;
@@ -11,17 +10,6 @@ contract UserInfo is usingOraclize {
         uint256 points;
         bool set;
     }
-
-    constructor() public payable {
-        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
-    }
-
-    function __callback(bytes32, string result) public {
-        if (msg.sender != oraclize_cbAddress())
-            revert("Wrong sender");
-        // buy the insurance
-    }
-
     mapping(address => User) private users;
 
     function getPoints() public view returns (uint256) {
@@ -48,7 +36,7 @@ contract UserInfo is usingOraclize {
         });
     }
 
-    function removePoints(uint256 points) public {
+    function removePoints(uint256 points) private {
         // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
         User storage user = users[msg.sender];
@@ -57,7 +45,7 @@ contract UserInfo is usingOraclize {
         user.points -= points;
     }
 
-    function addPoints(uint256 points) public {
+    function addPoints(uint256 points) private {
         // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
         User storage user = users[msg.sender];
@@ -72,6 +60,7 @@ contract UserInfo is usingOraclize {
         require(departureDate > block.timestamp, "You cannot buy insurance for past flights!");
     }
 
+    // buy a round-trip insurance
     function buyInsurance(bytes8 bookingNumber, uint departureDate,
         uint arrivalDate, uint returnDepartureDate, bool buyWithLoyalty) public payable {
         // buy return trip ticket
@@ -79,5 +68,6 @@ contract UserInfo is usingOraclize {
         // instead, we call a mock endpoint to determine whether the data is valid.
         require(departureDate > block.timestamp, "You cannot buy insurance for past flights!");
         // call oraclize to get whether flight details is correct
+
     }
 }

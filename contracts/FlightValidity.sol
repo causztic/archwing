@@ -4,15 +4,19 @@ import "oraclize-api/usingOraclize.sol";
 contract FlightValidity is usingOraclize {
 
     event LogNewOraclizeQuery(string description);
+    mapping (bytes32 => address) flightMappings;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     }
 
-    function __callback(bytes32, string result) public {
+    function __callback(bytes32 queryId, string result) public {
         if (msg.sender != oraclize_cbAddress())
             revert("Wrong sender");
-        // with the result, buy the insurance. Get the price
+        // this can only be called by oraclize when the query with the queryId completes.
+        require(flightMappings[queryId] > 0);
+        // delete to prevent double calling
+        delete flightMappings[queryId];
     }
 
     function checkFlightDetails(string bookingNumber) {
@@ -20,6 +24,8 @@ contract FlightValidity is usingOraclize {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             // TODO: call mock endpoint
+            bytes32 queryId =oraclize_query("URL", "json(ENDPOINT_URL_HERE)");
+            flightMappings[queryId] = address(this);
         }
     }
 
