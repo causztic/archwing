@@ -23,7 +23,9 @@ contract ConversionRate is usingOraclize {
         emit LogCallback(price, lastUpdated);
     }
     
-    function getConversionToSGD() public payable returns (string) {
+    function getConversionToSGD() public returns (string) {
+        // Currently returns a JSON string that will
+        // have to be parsed manually (no string library)
         return price;
     }
 
