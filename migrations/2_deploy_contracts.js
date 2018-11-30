@@ -1,6 +1,6 @@
 const Coverage = artifacts.require("Coverage");
 const UserInfo = artifacts.require("UserInfo");
-const ConversionRate = artifacts.require("UserInfo");
+const ConversionRate = artifacts.require("ConversionRate");
 const FlightValidity = artifacts.require("FlightValidity");
 
 module.exports = function(deployer) {
