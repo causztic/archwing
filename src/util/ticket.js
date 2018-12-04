@@ -1,3 +1,7 @@
+// Ticket PDF generated via https://keyflight.io/fake
+// The PDF parsing library didn't work so we are converting the PDFs
+// to images and using OCR instead
+
 export const parseTicket = (text) => {
   let arr = text.split('\n')
   const resCode = arr[3].split(' ')[2]

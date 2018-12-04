@@ -20,48 +20,20 @@ contract CheckValidity is usingOraclize {
     }
 
     function testCheckFlightDetails() public payable {
-        checkFlightDetails("", "SQ", "950", "SIN", "2018-10-24", "CGK", "2018-10-24");
+        checkFlightDetails("?booking_number=AAAAA");
     }
 
-    function checkFlightDetails(
-        string apikey, string airlineCode, string flightNumber,
-        string originAirportCode, string scheduledDepartureDate,
-        string destinationAirportCode, string scheduledArrivalDate) public payable {
-        // endpoint is limited to 100 calls a day.
+    // Currently only uses booking number to check details
+    // but more will be added once the API is finalized
+    function checkFlightDetails(string queryString) public payable {
         if (oraclize_getPrice("computation") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
             oraclize_query(
-                "computation",
-                [
-                    "QmdKK319Veha83h6AYgQqhx9YRsJ9MJE7y33oCXyZ4MqHE",
-                    "POST",
-                    "https://apigw.singaporeair.com/api/v3/flightstatus/getbynumber",
-                    string(
-                        abi.encodePacked(
-                            "{'headers': { 'content-type': 'application/json',",
-                            "'apikey':'", apikey,
-                            "'},",
-                            "'json':",
-                            "{'request': {",
-                            "'airlineCode':'", airlineCode,
-                            "',",
-                            "'flightNumber':'", flightNumber,
-                            "',",
-                            "'originAirportCode':'", originAirportCode,
-                            "',",
-                            "'scheduledDepartureDate':'", scheduledDepartureDate,
-                            "',",
-                            "'destinationAirportCode':'", destinationAirportCode,
-                            "',",
-                            "'scheduledArrivalDate':'", scheduledArrivalDate,
-                            "'},",
-                            "'clientUUID': 'TestIODocs'}}"
-                        )
-                    )
-                ]
-            ); 
+                "URL",
+                strConcat("https://archwing-bookings.herokuapp.com/tickets", queryString)
+            );
         }
     }
 }
