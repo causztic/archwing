@@ -12,6 +12,7 @@ An Ethereum distributed app that manages insurance for travelers.
 | Metamask       | Ethereum wallet, we recommend the Chrome plugin [here](https://metamask.io/)                                              |
 | Ganache        | Private blockchain, use `npm install -g ganache-cli` for CLI, or [use this](https://truffleframework.com/ganache) for GUI |
 | Truffle        | Ethereum development suite, use `npm install -g truffle` to install                                                       |
+| Ethereum-Bridge| This is needed for the Oraclize engine to access our private network. use `npm install -g ethereum-bridge` to install     | 
 
 ## Setup
 
@@ -28,13 +29,11 @@ If you are using pyenv,
 pyenv install -v 2.7.14
 ```
 
-After all that, install the necessary modules and copy the API key.
-Ethereum-Bridge is needed for the Oraclize engine to access our private network.
+After all that, install the necessary modules.
+
 
 ```sh
 npm install
-npm install -g ethereum-bridge
-cp .env.sample .env  # fill in the configuration required.
 ```
 
 ## Usage
@@ -43,7 +42,7 @@ First, start up Ganache as well as Ethereum-Bridge.
 
 ```sh
 ganache-cli  # or start up Ganache GUI
-ethereum-bridge --dev -H <host:port> -a 1
+ethereum-bridge --dev -H <host:port> -a 1 # if this fails, try to build ethereum-bridge from source: https://github.com/oraclize/ethereum-bridge
 ```
 
 Finally, use Truffle to compile the contracts and start up the dApp.
