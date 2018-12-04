@@ -13,9 +13,9 @@ contract FlightValidity is usingOraclize {
     function __callback(bytes32 queryId, string result) public {
         if (msg.sender != oraclize_cbAddress())
             revert("Wrong sender");
-        // this can only be called by oraclize when the query with the queryId completes.
+        // This can only be called by oraclize when the query with the queryId completes.
         require(flightMappings[queryId] > 0);
-        // delete to prevent double calling
+        // Delete to prevent double calling
         delete flightMappings[queryId];
     }
 
