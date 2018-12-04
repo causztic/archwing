@@ -14,7 +14,7 @@ contract FlightValidity is usingOraclize {
         if (msg.sender != oraclize_cbAddress())
             revert("Wrong sender");
         // This can only be called by oraclize when the query with the queryId completes.
-        require(flightMappings[queryId] > 0);
+        require(flightMappings[queryId] > 0, "No address for queryId");
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
@@ -30,10 +30,11 @@ contract FlightValidity is usingOraclize {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-            oraclize_query(
+            bytes32 queryId = oraclize_query(
                 "URL",
                 strConcat("https://archwing-bookings.herokuapp.com/tickets", queryString)
             );
+            flightMappins[queryId] = msg.sender;
         }
     }
 }
