@@ -1,29 +1,36 @@
 pragma solidity ^0.4.24;
 import "oraclize-api/usingOraclize.sol";
 
-contract CheckValidity is usingOraclize {
+contract FlightValidity is usingOraclize {
 
-    string public callback_result;
-    event LogConstructorInitiated(string nextStep);
-    event LogResult(string result);
     event LogNewOraclizeQuery(string description);
+    mapping (bytes32 => address) flightMappings;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     }
 
-    function __callback(bytes32, string result) public {
+    function __callback(bytes32 queryId, string result) public {
         if (msg.sender != oraclize_cbAddress())
             revert("Wrong sender");
-        callback_result = result;
-        emit LogResult(result);
+        // this can only be called by oraclize when the query with the queryId completes.
+        require(flightMappings[queryId] > 0);
+        // delete to prevent double calling
+        delete flightMappings[queryId];
     }
 
-    function testCheckFlightDetails() public payable {
-        checkFlightDetails("", "SQ", "950", "SIN", "2018-10-24", "CGK", "2018-10-24");
+    function checkFlightDetails(string bookingNumber) public {
+        if (oraclize_getPrice("URL") > address(this).balance) {
+            emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
+        } else {
+            // TODO: call mock endpoint
+            bytes32 queryId = oraclize_query("URL", "json(ENDPOINT_URL_HERE)");
+            flightMappings[queryId] = address(this);
+        }
     }
 
-    function checkFlightDetails(
+    // this method is unused as we are using mock flight data.
+    function checkRealFlightDetails(
         string apikey, string airlineCode, string flightNumber,
         string originAirportCode, string scheduledDepartureDate,
         string destinationAirportCode, string scheduledArrivalDate) public payable {
@@ -61,7 +68,7 @@ contract CheckValidity is usingOraclize {
                         )
                     )
                 ]
-            ); 
+            );
         }
     }
 }
