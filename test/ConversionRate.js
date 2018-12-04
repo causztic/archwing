@@ -22,7 +22,8 @@ contract('ConversionRate', async (accounts) => {
     const logNewPriceWatcher = promisifyLogWatch(instance.LogCallback({ fromBlock: 'latest' }));
 
     log = await logNewPriceWatcher;
-    assert.web3Eevent(log, { event: 'LogCallback' });
+    const eventWrapper = { 'logs': [log] }
+    assert.web3Event(eventWrapper, { event: 'LogCallback' });
     assert.isNotNull(log.args.price, 'Price returned was null.');
 
     console.log(log.args.price);
