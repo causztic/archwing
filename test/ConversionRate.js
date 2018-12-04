@@ -3,10 +3,15 @@ require('truffle-test-utils').init();
 const ConversionRate = artifacts.require('ConversionRate');
 
 contract('ConversionRate', async (accounts) => {
-
-  it('should get the ETH / SGD pairing from the api', async () => {
+  it('should get initial empty ETH / SGD pairing', async () => {
     let instance = await ConversionRate.deployed();
-    let response = await instance.getConversionToSGD();
+    let price = await instance.getConversionToSGD.call();
+    assert.isNull(price);
+  });
+
+  it('should update ETH / SGD pairing with the api', async () => {
+    let instance = await ConversionRate.deployed();
+    let response = await instance.updateConversionToSGD();
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
