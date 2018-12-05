@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 import "oraclize-api/usingOraclize.sol";
-// import "jsmnsol-lib/JsmnSolLib.sol";
+import "jsmnsol-lib/JsmnSolLib.sol";
 
 contract UserInfo {
     function addTicket(bytes8) public {}
@@ -10,7 +10,7 @@ contract UserInfo {
 contract FlightValidity is usingOraclize {
 
     event LogNewOraclizeQuery(string description);
-    mapping (bytes32 => address) flightMappings;
+    mapping (bytes32 => bytes8) flightMappings;
     UserInfo ui;
 
     constructor(address uiAddr) public payable {
@@ -24,9 +24,15 @@ contract FlightValidity is usingOraclize {
         // This can only be called by oraclize when the query 
         // with the queryId completes
         require(flightMappings[queryId] != "", "Invalid queryId");
+        // Parse resulting JSON string
+        var (success, tokens, numberTokens) = parse(result, 4);
+        Token memory t = tokens[2];
+        string memory jsonElement = getBytes(json, t.start, t.end);
+
+        // jsonElement will be 'false' if no ticket is returned
         bytes8 bookingNum = flightMappings[queryId];
         uint8 processStatus = 1;
-        if (result == "null") {
+        if (success && parseBool(jsonElement)) {
             processStatus = 2;
         }
         ui.updateTicket(bookingNum, processStatus);
