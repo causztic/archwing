@@ -6,7 +6,7 @@ import { parseTicketPDF, constructQuery } from '../../util/ticket';
 class Ticket extends React.Component {
   constructor(props) {
     super(props);
-    this.flightValidity = this.props.flightValidity;
+    this.checkFlightDetails = this.props.flightValidity.methods.checkFlightDetails;
     this.state = {
       ticket1: null,
       ticket2: null
@@ -53,9 +53,10 @@ class Ticket extends React.Component {
       console.log("No file chosen.");
       return;
     }
+    const bookingNum = this.state.ticket1.resCode;
     const queryStr = constructQuery(this.state.ticket1);
     console.log(queryStr);
-    this.flightValidity.methods.checkFlightDetails.cacheSend(queryStr);
+    this.checkFlightDetails.cacheSend(bookingNum, queryStr);
   }
 
   render() {

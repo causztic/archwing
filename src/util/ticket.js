@@ -1,6 +1,10 @@
 // Ticket PDF generated via https://keyflight.io/fake
 export const parseTicketPDF = (text) => {
   const arr = text.split('\n');
+  if (arr.length < 35) {
+    console.log("Invalid PDF");
+    return {};
+  }
   const resCode = arr[4].split(' ')[2];
   const flightNum = arr[9];
   const airline = arr[10].split(': ')[1];
@@ -13,16 +17,16 @@ export const parseTicketPDF = (text) => {
   const arrivalTime = arr[30];
   const passengerName = arr[34].split('Check-in')[0];
   return {
-      resCode,
-      flightNum,
-      airline,
-      ticketClass,
-      departureAirport,
-      departureDate,
-      departureTime,
-      arrivalAirport,
-      arrivalTime,
-      passengerName
+    resCode,
+    flightNum,
+    airline,
+    ticketClass,
+    departureAirport,
+    departureDate,
+    departureTime,
+    arrivalAirport,
+    arrivalTime,
+    passengerName
   };
 }
 

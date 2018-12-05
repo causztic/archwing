@@ -2,22 +2,22 @@ pragma solidity ^0.4.24;
 import { Coverage } from "./Coverage.sol";
 
 contract UserInfo {
+    struct Ticket {
+        uint8 processStatus;  // 0 - pending, 1 - invalid, 2 - valid
+        bool set;
+    }
+
     struct User {
-        mapping(uint => Coverage.Insurance) insurances;
-        uint insuranceSize;
+        mapping(bytes8 => Ticket) tickets;
+        mapping(uint256 => Coverage.Insurance) insurances;
+        uint256 insuranceSize;
         // LIMITATION: Copying of type struct Coverage.Insurance memory[] memory to storage not yet supported
         // Coverage.Insurance[] insurances;
         uint256 points;
         bool set;
     }
+    
     mapping(address => User) private users;
-
-    function getPoints() public view returns (uint256) {
-        User storage user = users[msg.sender];
-        require(user.set, "User is not set");
-
-        return user.points;
-    }
 
     function userExists() public view returns (bool) {
         User storage user = users[msg.sender];
@@ -27,7 +27,7 @@ contract UserInfo {
     function createUser() public {
         User storage user = users[msg.sender];
         // Check that the user did not already exist:
-        require(!user.set, "User is already set");
+        require(!user.set, "User already exists");
         // Store the user
         users[msg.sender] = User({
             insuranceSize: 0,
@@ -36,11 +36,17 @@ contract UserInfo {
         });
     }
 
+    function getPoints() public view returns (uint256) {
+        User storage user = users[msg.sender];
+        require(user.set, "User does not exist");
+
+        return user.points;
+    }
+
     function removePoints(uint256 points) private {
-        // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
         User storage user = users[msg.sender];
-        require(user.set, "User is not set");
+        require(user.set, "User does not exist");
 
         user.points -= points;
     }
@@ -49,25 +55,33 @@ contract UserInfo {
         // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
         User storage user = users[msg.sender];
-        require(user.set, "User is not set");
+        require(user.set, "User does not exist");
 
         user.points += points;
     }
+    
+    function addTicket(bytes8 bookingNum) public {
+        User storage user = users[msg.sender];
+        require(user.set, "User does not exist");
 
-    // buy an insurance
-    function buyInsurance(bytes8 bookingNumber, uint departureDate,
-        uint arrivalDate, bool buyWithLoyalty) public payable {
-        require(departureDate > block.timestamp, "You cannot buy insurance for past flights!");
+        Ticket storage ticket = user.tickets[bookingNum];
+        require(!ticket.set, "Ticket already added");
+        users[msg.sender].tickets[bookingNum] = Ticket({
+            processStatus: 0,
+            set: true
+        });
     }
+    
+    function updateTicket(bytes8 bookingNum, uint8 newStatus) public {
+        require(
+            newStatus >= 0 && newStatus <= 2,
+            "Invalid processing status code for ticket"
+        );
+        User storage user = users[msg.sender];
+        require(user.set, "User does not exist");
 
-    // buy a round-trip insurance
-    function buyInsurance(bytes8 bookingNumber, uint departureDate,
-        uint arrivalDate, uint returnDepartureDate, bool buyWithLoyalty) public payable {
-        // buy return trip ticket
-        // LIMITATION: we cannot verify actual booking numbers because we don't have the data.
-        // instead, we call a mock endpoint to determine whether the data is valid.
-        require(departureDate > block.timestamp, "You cannot buy insurance for past flights!");
-        // call oraclize to get whether flight details is correct
-
+        Ticket storage ticket = user.tickets[bookingNum];
+        require(ticket.set, "Ticket does not exist");
+        users[msg.sender].tickets[bookingNum].processStatus = newStatus;
     }
 }
