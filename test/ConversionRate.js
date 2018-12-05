@@ -1,8 +1,9 @@
 /* eslint-disable */
 require('truffle-test-utils').init();
+const { promisifyLogWatch } = require("./utils");
 const ConversionRate = artifacts.require('ConversionRate');
 
-contract('ConversionRate', async (accounts) => {
+contract('ConversionRate', () => {
   it('should get initial empty ETH / SGD pairing', async () => {
     let instance = await ConversionRate.deployed();
     let price = await instance.getConversionToSGD.call();
@@ -20,28 +21,10 @@ contract('ConversionRate', async (accounts) => {
     });
     // Wait for the callback to be invoked by oraclize and the event to be emitted
     const logNewPriceWatcher = promisifyLogWatch(instance.LogCallback({ fromBlock: 'latest' }));
-
     log = await logNewPriceWatcher;
     const eventWrapper = { 'logs': [log] }
     assert.web3Event(eventWrapper, { event: 'LogCallback' });
     assert.isNotNull(log.args.price, 'Price returned was null.');
-
-    console.log(log.args.price);
+    // console.log(log.args.price);
   });
 });
-
-/**
- * Helper to wait for log emission.
- * @param  {Object} _event The event to wait for.
- */
-function promisifyLogWatch(_event) {
-  return new Promise((resolve, reject) => {
-    _event.watch((error, log) => {
-      _event.stopWatching();
-      if (error !== null)
-        reject(error);
-
-      resolve(log);
-    });
-  });
-}

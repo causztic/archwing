@@ -60,8 +60,8 @@ contract UserInfo {
         user.points += points;
     }
     
-    function addTicket(bytes8 bookingNum) public {
-        User storage user = users[msg.sender];
+    function addTicket(bytes8 bookingNum, address userAddr) public {
+        User storage user = users[userAddr];
         require(user.set, "User does not exist");
 
         Ticket storage ticket = user.tickets[bookingNum];
@@ -72,12 +72,13 @@ contract UserInfo {
         });
     }
     
-    function updateTicket(bytes8 bookingNum, uint8 newStatus) public {
+    function updateTicket(
+        bytes8 bookingNum, uint8 newStatus, address userAddr) public {
         require(
             newStatus >= 0 && newStatus <= 2,
             "Invalid processing status code for ticket"
         );
-        User storage user = users[msg.sender];
+        User storage user = users[userAddr];
         require(user.set, "User does not exist");
 
         Ticket storage ticket = user.tickets[bookingNum];

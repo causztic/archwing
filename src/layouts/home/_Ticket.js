@@ -1,12 +1,13 @@
 import React from 'react';
 import pdfjsLib from 'pdfjs-dist';
+import Web3 from 'web3';
 
 import { parseTicketPDF, constructQuery } from '../../util/ticket';
 
 class Ticket extends React.Component {
   constructor(props) {
     super(props);
-    this.checkFlightDetails = this.props.flightValidity.methods.checkFlightDetails;
+    this.flightValidity = this.props.flightValidity;
     this.state = {
       ticket1: null,
       ticket2: null
@@ -53,10 +54,11 @@ class Ticket extends React.Component {
       console.log("No file chosen.");
       return;
     }
-    const bookingNum = this.state.ticket1.resCode;
+    const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
     const queryStr = constructQuery(this.state.ticket1);
+    console.log(bookingNum);
     console.log(queryStr);
-    this.checkFlightDetails.cacheSend(bookingNum, queryStr);
+    this.flightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr);
   }
 
   render() {

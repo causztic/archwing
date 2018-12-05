@@ -3,14 +3,21 @@ import "oraclize-api/usingOraclize.sol";
 import "jsmnsol-lib/JsmnSolLib.sol";
 
 contract UserInfo {
-    function addTicket(bytes8) public {}
-    function updateTicket(bytes8, uint8) public {}
+    function addTicket(bytes8, address) public {}
+    function updateTicket(bytes8, uint8, address) public {}
 }
 
 contract FlightValidity is usingOraclize {
+    struct UserBooking {
+        bytes8 bookingNum;
+        address origin;
+        bool set;
+    }
 
     event LogNewOraclizeQuery(string description);
-    mapping (bytes32 => bytes8) flightMappings;
+    event LogCallback(string result);
+    event LogJsonParse(string element);
+    mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
 
     constructor(address uiAddr) public payable {
@@ -19,32 +26,31 @@ contract FlightValidity is usingOraclize {
     }
 
     function __callback(bytes32 queryId, string result) public {
-        if (msg.sender != oraclize_cbAddress())
-            revert("Wrong sender");
+        require(msg.sender == oraclize_cbAddress(), "Wrong sender");
         // This can only be called by oraclize when the query 
         // with the queryId completes
-        require(flightMappings[queryId] != "", "Invalid queryId");
+        require(flightMappings[queryId].set, "Invalid queryId");
+        emit LogCallback(result);
+
         // Parse resulting JSON string
-        uint returnVal;
-        JsmnSolLib.Token[] memory tokens;
-        uint numTokens;
-        (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
-        JsmnSolLib.Token memory t = tokens[2];
-        string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
+        // uint returnVal;
+        // JsmnSolLib.Token[] memory tokens;
+        // uint numTokens;
+        // (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
+        // JsmnSolLib.Token memory t = tokens[2];
+        // string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
+        // emit LogJsonParse(jsonElement);
 
         // jsonElement will be 'false' if no ticket is returned
-        bytes8 bookingNum = flightMappings[queryId];
-        uint8 processStatus = 1;
-        if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
-            processStatus = 2;
-        }
-        ui.updateTicket(bookingNum, processStatus);
+        // bytes8 bookingNum = flightMappings[queryId].bookingNum;
+        // address origin = flightMappings[queryId].origin;
+        // uint8 processStatus = 1;
+        // if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
+        //     processStatus = 2;
+        // }
+        // ui.updateTicket(bookingNum, processStatus, origin);
         // Delete to prevent double calling
         delete flightMappings[queryId];
-    }
-
-    function testCheckFlightDetails() public payable {
-        checkFlightDetails("AAAAA", "?booking_number=AAAAA&departure=1542868560");
     }
 
     function checkFlightDetails(
@@ -52,7 +58,7 @@ contract FlightValidity is usingOraclize {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
-        if (oraclize_getPrice("computation") > address(this).balance) {
+        if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
@@ -64,8 +70,12 @@ contract FlightValidity is usingOraclize {
                     ").ticket"
                 )
             );
-            flightMappings[queryId] = bookingNumber;
-            ui.addTicket(bookingNumber);
+            flightMappings[queryId] = UserBooking({
+                bookingNum: bookingNumber,
+                origin: msg.sender,
+                set: true
+            });
+            // ui.addTicket(bookingNumber, msg.sender);
         }
     }
 }

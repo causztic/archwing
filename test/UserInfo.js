@@ -2,7 +2,7 @@
 require('truffle-test-utils').init();
 const UserInfo = artifacts.require('UserInfo');
 
-contract('UserInfo', async (accounts) => {
+contract('UserInfo', () => {
   it('should create a new user when not created yet', async () => {
     let instance = await UserInfo.deployed();
     userExists = await instance.userExists();
