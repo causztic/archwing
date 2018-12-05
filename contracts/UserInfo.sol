@@ -25,6 +25,21 @@ contract UserInfo {
         allowedCaller = contractAddr;
     }
 
+    function getInsurances() public view returns (bytes8[], byte[]) {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+
+        bytes8[]  memory bookingNumbers  = new bytes8[](user.insuranceSize);
+        byte[]    memory claimStatus = new byte[](user.insuranceSize);
+
+        for (uint i = 0; i < user.insuranceSize; i++) {
+            Coverage.Insurance storage insurance = user.insurances[i];
+            bookingNumbers[i] = insurance.bookingNumber;
+            claimStatus[i] = insurance.claimStatus;
+        }
+        return (bookingNumbers, claimStatus);
+    }
+
     function userExists() public view returns (bool) {
         User storage user = users[msg.sender];
         return user.set;

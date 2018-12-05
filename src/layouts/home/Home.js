@@ -9,6 +9,7 @@ import {
   faMoneyBill,
   faChevronDown
 } from "@fortawesome/free-solid-svg-icons";
+import Coverage from "./_Coverage";
 
 import Ticket from "./_Ticket";
 
@@ -117,7 +118,7 @@ class Home extends Component {
               <h2 className="header">Claim Payouts</h2>
               <h3>Near-instant, fuss-free payouts.</h3>
               {this.userExists ? (
-                <p>You currently have no coverage plans with us.</p>
+                <Coverage contracts={this.props.contracts}/>
               ) : (
                 createAccountButton
               )}
