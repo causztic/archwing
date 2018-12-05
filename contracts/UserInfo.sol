@@ -17,7 +17,13 @@ contract UserInfo {
         bool set;
     }
     
+    address allowedCaller;
     mapping(address => User) private users;
+    
+    function setAllowedCaller(address contractAddr) public {
+        require(allowedCaller == address(0), "Allowed caller already set");
+        allowedCaller = contractAddr;
+    }
 
     function userExists() public view returns (bool) {
         User storage user = users[msg.sender];
@@ -60,7 +66,12 @@ contract UserInfo {
         user.points += points;
     }
     
-    function addTicket(bytes8 bookingNum, address userAddr) public {
+    modifier onlyFlightVal {
+        require(msg.sender == allowedCaller, "Invalid caller");
+        _;
+    }
+    
+    function addTicket(bytes8 bookingNum, address userAddr) public onlyFlightVal {
         User storage user = users[userAddr];
         require(user.set, "User does not exist");
 
@@ -73,7 +84,7 @@ contract UserInfo {
     }
     
     function updateTicket(
-        bytes8 bookingNum, uint8 newStatus, address userAddr) public {
+        bytes8 bookingNum, uint8 newStatus, address userAddr) public onlyFlightVal {
         require(
             newStatus >= 0 && newStatus <= 2,
             "Invalid processing status code for ticket"
