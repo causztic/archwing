@@ -13,8 +13,9 @@ contract FlightValidity is usingOraclize {
     mapping (bytes32 => address) flightMappings;
     UserInfo ui;
 
-    constructor() public payable {
+    constructor(address uiAddr) public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+        ui = UserInfo(uiAddr);
     }
 
     function __callback(bytes32 queryId, string result) public {
@@ -54,7 +55,7 @@ contract FlightValidity is usingOraclize {
                     ").ticket"
                 )
             );
-            flightMappins[queryId] = bookingNumber;
+            flightMappings[queryId] = bookingNumber;
             ui.addTicket(bookingNumber);
         }
     }

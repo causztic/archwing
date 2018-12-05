@@ -5,7 +5,8 @@ const FlightValidity = artifacts.require("FlightValidity");
 
 module.exports = function(deployer) {
   deployer.deploy(Coverage);
-  deployer.deploy(UserInfo);
   deployer.deploy(ConversionRate);
-  deployer.deploy(FlightValidity);
+  deployer.deploy(UserInfo).then(function(ui) {
+    deployer.deploy(FlightValidity, ui.address);
+  });
 };
