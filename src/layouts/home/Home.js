@@ -10,6 +10,8 @@ import {
   faChevronDown
 } from "@fortawesome/free-solid-svg-icons";
 
+import Ticket from "./_Ticket";
+
 class Home extends Component {
   constructor(props, context) {
     super(props);
@@ -83,14 +85,7 @@ class Home extends Component {
                 Get insured for single or round trips at affordable rates.
               </h3>
               {this.userExists ? (
-                <div>
-                  <a href="/" className="pure-button">
-                    Upload Ticket PDF
-                  </a>
-                  <a href="/" className="pure-button">
-                    Upload Ticket from Camera
-                  </a>
-                </div>
+                <Ticket flightValidity={this.contracts.FlightValidity} />
               ) : (
                 createAccountButton
               )}

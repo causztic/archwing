@@ -29,6 +29,7 @@ The Dapp should perform the following tasks automatically.
 
 - Read, analyze, and extract tickets data. Consider reading PDF or
     images with QR codes
+
 - Request information about flights existence and status to a legitimate
     data source (e.g., Changi Airport) through a contract to contract communication.
 

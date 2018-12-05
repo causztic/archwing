@@ -1,5 +1,6 @@
 import CheckValidity from './../build/contracts/CheckValidity.json'
 import UserInfo from './../build/contracts/UserInfo.json'
+import FlightValidity from './../build/contracts/FlightValidity.json'
 
 const drizzleOptions = {
   web3: {
@@ -12,6 +13,7 @@ const drizzleOptions = {
   contracts: [
     CheckValidity,
     UserInfo,
+    FlightValidity
   ],
   polls: {
     accounts: 1500
