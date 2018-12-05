@@ -1,19 +1,22 @@
 pragma solidity ^0.4.24;
 import { Coverage } from "./Coverage.sol";
 
+contract ConversionRate {
+    function getConversionToSGD() external view returns (uint256) {}
+}
+
 contract UserInfo {
     struct Ticket {
-        uint8 processStatus;  // 0 - pending, 1 - invalid, 2 - valid
+        uint256 processStatus;  // 0 - pending, 1 - invalid, 2 - valid
+        uint256 ticketType;     // 0 - single, 1 - round-trip
         bool set;
     }
 
     struct User {
         mapping(bytes8 => Ticket) tickets;
-        mapping(uint256 => Coverage.Insurance) insurances;
+        mapping(bytes8 => Coverage.Insurance) insurances;
+
         bytes8[] bookingNumbers;
-        uint256  insuranceSize;
-        // LIMITATION: Copying of type struct Coverage.Insurance memory[] memory to storage not yet supported
-        // Coverage.Insurance[] insurances;
         uint256 points;
         bool set;
     }
@@ -38,7 +41,6 @@ contract UserInfo {
         // Store the user
         users[msg.sender] = User({
             bookingNumbers: new bytes8[](0),
-            insuranceSize: 0,
             points: 0,
             set: true
         });
@@ -69,12 +71,12 @@ contract UserInfo {
 
     // TICKETS
 
-    function getTickets() external view returns (bytes8[], uint8[]) {
+    function getTickets() external view returns (bytes8[], uint256[]) {
         User storage user = users[msg.sender];
         require(user.set, "User does not exist");
 
         bytes8[]  memory bookingNumbers  = new bytes8[](user.bookingNumbers.length);
-        uint8[]    memory processStatus = new uint8[](user.bookingNumbers.length);
+        uint256[]    memory processStatus = new uint256[](user.bookingNumbers.length);
 
         for (uint i = 0; i < user.bookingNumbers.length; i++) {
             bookingNumbers[i] = user.bookingNumbers[i];
@@ -97,13 +99,14 @@ contract UserInfo {
         require(!ticket.set, "Ticket already added");
         user.tickets[bookingNum] = Ticket({
             processStatus: 0,
+            ticketType: 0,
             set: true
         });
         user.bookingNumbers.push(bookingNum);
     }
 
     function updateTicket(
-        bytes8 bookingNum, uint8 newStatus, address userAddr) external onlyFlightVal {
+        bytes8 bookingNum, uint256 newStatus, address userAddr) external onlyFlightVal {
         require(
             newStatus >= 0 && newStatus <= 2,
             "Invalid processing status code for ticket"
@@ -117,18 +120,24 @@ contract UserInfo {
     }
 
     // INSURANCES
-    function getInsurances() external view returns (bytes8[], byte[]) {
+    function getInsurances() external view returns (bytes8[], uint256[]) {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        bytes8[]  memory bookingNumbers  = new bytes8[](user.insuranceSize);
-        byte[]    memory claimStatus = new byte[](user.insuranceSize);
+        bytes8[] memory bookingNumbers  = new bytes8[](user.bookingNumbers.length);
+        uint256[] memory claimStatus = new uint256[](user.bookingNumbers.length);
 
-        for (uint i = 0; i < user.insuranceSize; i++) {
-            Coverage.Insurance storage insurance = user.insurances[i];
-            bookingNumbers[i] = insurance.bookingNumber;
+        for (uint i = 0; i < user.bookingNumbers.length; i++) {
+            Coverage.Insurance storage insurance = user.insurances[user.bookingNumbers[i]];
+            bookingNumbers[i] = user.bookingNumbers[i];
             claimStatus[i] = insurance.claimStatus;
         }
         return (bookingNumbers, claimStatus);
+    }
+
+    function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) public payable {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+        require(user.tickets[bookingNumber].set, "bookingNumber not found");
     }
 }

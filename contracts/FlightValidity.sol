@@ -4,7 +4,7 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 
 contract UserInfo {
     function addTicket(bytes8, address) external {}
-    function updateTicket(bytes8, uint8, address) external {}
+    function updateTicket(bytes8, uint256, address) external {}
 }
 
 contract FlightValidity is usingOraclize {
@@ -44,7 +44,7 @@ contract FlightValidity is usingOraclize {
         // jsonElement will be 'false' if no ticket is returned
         bytes8 bookingNum = flightMappings[queryId].bookingNum;
         address userAddr = flightMappings[queryId].userAddr;
-        uint8 processStatus = 1;
+        uint256 processStatus = 1;
         if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
             processStatus = 2;
         }
