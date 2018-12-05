@@ -1,4 +1,3 @@
-import Web3 from 'web3';
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { BigNumber } from "bignumber.js";
@@ -13,6 +12,7 @@ import {
 import Coverage from "./_Coverage";
 
 import Ticket from "./_Ticket";
+import TicketViewer from './_TicketViewer';
 
 class Home extends Component {
   constructor(props, context) {
@@ -20,7 +20,6 @@ class Home extends Component {
     this.points = 0;
     this.userLoading = true;
     this.userExists = false;
-    this.tickets = [[], []];
 
     this.contracts = context.drizzle.contracts;
     this.userExistsDataKey = this.contracts.UserInfo.methods.userExists.cacheCall();
@@ -46,19 +45,8 @@ class Home extends Component {
     }
   };
 
-  getTickets = () => {
-    this.ticketDataKey = this.contracts.UserInfo.methods.getTickets.cacheCall();
-    if (this.ticketDataKey in this.props.contracts.UserInfo.getTickets) {
-      this.tickets = this.props.contracts.UserInfo.getTickets[
-        this.ticketDataKey
-      ].value;
-    }
-  };
-
   render() {
     this.checkUserExists();
-    this.getTickets();
-
     const createAccountButton = (
       <button
         className="pure-button pure-button-primary"
@@ -67,33 +55,6 @@ class Home extends Component {
         Create your account now!
       </button>
     );
-
-    let ticketViewer = [];
-
-    if (this.userExists && this.tickets && this.tickets[0].length > 0) {
-      for (let i = 0; i < this.tickets[0].length; i++) {
-        let statusClass = "invalid";
-        let status = this.tickets[1][i];
-
-        if (status === "0") {
-          statusClass = "pending";
-        } else if (status === "1") {
-          statusClass = "valid";
-        }
-
-        ticketViewer.push(
-          <div className="pending-ticket" key={this.tickets[0][i]}>
-            <div className="booking-number">
-              {Web3.utils.toAscii(this.tickets[0][i])}
-            </div>
-            <div className={`process-status ${statusClass}`}>{statusClass.toUpperCase()}</div>
-          </div>
-        );
-      }
-    } else {
-      ticketViewer = <b>You have not uploaded any tickets yet.</b>;
-    }
-
 
     return (
       <main className="container">
@@ -146,8 +107,7 @@ class Home extends Component {
               )}
             </div>
             <div className="pure-u-2-5 hero">
-              <h3>Your Tickets</h3>
-              {ticketViewer}
+                <TicketViewer contracts={this.props.contracts} userExists={this.userExists} />
             </div>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
