@@ -7,7 +7,7 @@ contract('ConversionRate', () => {
   it('should get initial empty ETH / SGD pairing', async () => {
     let instance = await ConversionRate.deployed();
     let price = await instance.getConversionToSGD.call();
-    assert.isEmpty(price);
+    assert.strictEqual(price.toNumber(), 0);
   });
 
   it('should update ETH / SGD pairing with the api', async () => {
