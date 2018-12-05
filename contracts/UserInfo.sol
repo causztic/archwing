@@ -21,8 +21,18 @@ contract UserInfo {
         bool set;
     }
 
-    address allowedCaller;
+    address private allowedCaller;
+    address private owner;
     mapping(address => User) private users;
+
+    constructor() public {
+        owner = msg.sender;
+    }
+
+    modifier onlyFlightVal {
+        require(msg.sender == allowedCaller, "Invalid caller");
+        _;
+    }
 
     function setAllowedCaller(address contractAddr) external {
         require(allowedCaller == address(0), "Allowed caller already set");
@@ -84,11 +94,6 @@ contract UserInfo {
             processStatus[i] = ticket.processStatus;
         }
         return (bookingNumbers, processStatus);
-    }
-
-    modifier onlyFlightVal {
-        require(msg.sender == allowedCaller, "Invalid caller");
-        _;
     }
 
     function addTicket(bytes8 bookingNum, address userAddr) external onlyFlightVal {
