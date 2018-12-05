@@ -25,14 +25,17 @@ contract FlightValidity is usingOraclize {
         // with the queryId completes
         require(flightMappings[queryId] != "", "Invalid queryId");
         // Parse resulting JSON string
-        var (success, tokens, numberTokens) = parse(result, 4);
-        Token memory t = tokens[2];
-        string memory jsonElement = getBytes(json, t.start, t.end);
+        uint returnVal;
+        JsmnSolLib.Token[] memory tokens;
+        uint numTokens;
+        (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
+        JsmnSolLib.Token memory t = tokens[2];
+        string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
 
         // jsonElement will be 'false' if no ticket is returned
         bytes8 bookingNum = flightMappings[queryId];
         uint8 processStatus = 1;
-        if (success && parseBool(jsonElement)) {
+        if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
             processStatus = 2;
         }
         ui.updateTicket(bookingNum, processStatus);
@@ -41,7 +44,7 @@ contract FlightValidity is usingOraclize {
     }
 
     function testCheckFlightDetails() public payable {
-        checkFlightDetails("?booking_number=AAAAA&departure=1542868560");
+        checkFlightDetails("AAAAA", "?booking_number=AAAAA&departure=1542868560");
     }
 
     function checkFlightDetails(
