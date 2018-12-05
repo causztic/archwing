@@ -42,7 +42,8 @@ First, start up Ganache as well as Ethereum-Bridge.
 
 ```sh
 ganache-cli  # or start up Ganache GUI
-ethereum-bridge --dev -H <host:port> -a 1 # if this fails, try to build ethereum-bridge from source: https://github.com/oraclize/ethereum-bridge
+ethereum-bridge --dev -H <host:port> -a 1 
+# if the above fails, try to build ethereum-bridge from source: https://github.com/oraclize/ethereum-bridge
 ```
 
 Finally, use Truffle to compile the contracts and start up the dApp.
@@ -70,10 +71,17 @@ After starting up the dApp:
 
 ## Testing
 
+To run any test suites, use the following:
+
 ```sh
 truffle test  # for contract testing
 npm run test  # for React testing
 ```
+
+_**Note:**_ For Truffle testing, delete all contracts `.json` from `/build` before doing so. This is because some of our
+contracts depend on each other, and the address to the depended contract is stored in these `.json`. `truffle test`
+also migrates contracts but DOES NOT modify these `.json` files. If the build files are not deleted, the contracts
+won't be able to call other contracts' functions.
 
 ## Building
 
