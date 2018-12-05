@@ -17,6 +17,7 @@ class Home extends Component {
   constructor(props, context) {
     super(props);
     this.points = 0;
+    this.userLoading = true;
     this.userExists = false;
     this.contracts = context.drizzle.contracts;
     this.userExistsDataKey = this.contracts.UserInfo.methods.userExists.cacheCall();
@@ -31,9 +32,12 @@ class Home extends Component {
       this.userExists = this.props.contracts.UserInfo.userExists[
         this.userExistsDataKey
       ].value;
-      this.points = BigNumber(
-        this.contracts.UserInfo.methods.getPoints.cacheCall()
-      ).toString(10);
+      this.userLoading = false;
+
+      let pointDataKey = this.contracts.UserInfo.methods.getPoints.cacheCall();
+      if (pointDataKey in this.props.contracts.UserInfo.getPoints) {
+        this.points = BigNumber(this.props.contracts.UserInfo.getPoints[pointDataKey].value).toString(10);
+      }
     }
   };
 
@@ -71,7 +75,7 @@ class Home extends Component {
                 Flight delay / cancellation insurance distribution app with
                 smart contracts
               </p>
-              {this.userExists ? undefined : createAccountButton}
+              {this.userLoading ? undefined : this.userExists ? undefined : createAccountButton}
             </div>
             <a href="#instant-coverage">
               <div className="bouncing-arrow">
@@ -80,16 +84,26 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <div className="pure-u-1-2 hero">
+            <div className="pure-u-3-5 hero">
               <h2>Instant Coverage</h2>
               <h3>
                 Get insured for single or round trips at affordable rates.
               </h3>
-              {this.userExists ? (
+              {this.userLoading ? undefined : this.userExists ? (
                 <Ticket flightValidity={this.contracts.FlightValidity} />
               ) : (
                 createAccountButton
               )}
+            </div>
+            <div className="pure-u-2-5 hero">
+              <div>
+                <h3>Delayed Flights?</h3>
+                <b>Get SGD $200!</b>
+              </div>
+              <div>
+                <h3>Cancelled Flights?</h3>
+                <b>Get SGD $5000!</b>
+              </div>
             </div>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
@@ -101,7 +115,7 @@ class Home extends Component {
             <div className="pure-u-1-2 hero">
               <h2>Loyalty Points</h2>
               <h3>Earn AWPoints for every plan you purchase with us.</h3>
-              {this.userExists ? (
+              {this.userLoading ? undefined : this.userExists ? (
                 <p>You currently have {this.points} AWPoints.</p>
               ) : (
                 createAccountButton
@@ -117,7 +131,7 @@ class Home extends Component {
             <div className="pure-u-1-2 hero">
               <h2 className="header">Claim Payouts</h2>
               <h3>Near-instant, fuss-free payouts.</h3>
-              {this.userExists ? (
+              {this.userLoading ? undefined :  this.userExists ? (
                 <Coverage contracts={this.props.contracts}/>
               ) : (
                 createAccountButton

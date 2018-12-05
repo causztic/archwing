@@ -25,11 +25,11 @@ contract ConversionRate is usingOraclize {
         emit LogCallback(_result, lastUpdated);
     }
 
-    function getConversionToSGD() public view returns (uint256) {
+    function getConversionToSGD() external view returns (uint256) {
         return price;
     }
 
-    function updateConversionToSGD() public payable {
+    function updateConversionToSGD() external payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {

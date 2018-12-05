@@ -13,7 +13,7 @@ class Ticket extends React.Component {
       ticket2: null
     }
   }
-  
+
   componentDidMount() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
   }
@@ -21,6 +21,11 @@ class Ticket extends React.Component {
   handleFileChosen = (event) => {
     const ticketComponent = this;
     const file = event.target.files[0];
+
+    if (file.type !== 'application/pdf') {
+      return null;
+    }
+
     let fileReader = new FileReader();
     fileReader.onload = function() {
       const typedArr = new Uint8Array(this.result);
@@ -37,7 +42,7 @@ class Ticket extends React.Component {
               res += item.str.trim();
             })
             return res;
-          });          
+          });
         });
         return pagePromise.then((text) => {
           ticketComponent.setState({ ticket1: parseTicketPDF(text) });
@@ -48,7 +53,7 @@ class Ticket extends React.Component {
 
     fileReader.readAsArrayBuffer(file);
   }
-  
+
   submitFile = () => {
     if (this.state.ticket1 === null) {
       console.log("No file chosen.");
@@ -64,8 +69,9 @@ class Ticket extends React.Component {
   render() {
     return (
       <div>
+        <pre>Upload your Ticket PDF</pre>
         <input type="file" onChange={this.handleFileChosen} />
-        <button className="pure-button" onClick={this.submitFile}>
+        <button className="pure-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
           Submit
         </button>
       </div>

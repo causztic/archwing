@@ -16,10 +16,10 @@ contract UserInfo {
         uint256 points;
         bool set;
     }
-    
+
     address allowedCaller;
     mapping(address => User) private users;
-    
+
     function setAllowedCaller(address contractAddr) public {
         require(allowedCaller == address(0), "Allowed caller already set");
         allowedCaller = contractAddr;
@@ -40,12 +40,12 @@ contract UserInfo {
         return (bookingNumbers, claimStatus);
     }
 
-    function userExists() public view returns (bool) {
+    function userExists() external view returns (bool) {
         User storage user = users[msg.sender];
         return user.set;
     }
 
-    function createUser() public {
+    function createUser() external {
         User storage user = users[msg.sender];
         // Check that the user did not already exist:
         require(!user.set, "User already exists");
@@ -57,7 +57,7 @@ contract UserInfo {
         });
     }
 
-    function getPoints() public view returns (uint256) {
+    function getPoints() external view returns (uint256) {
         User storage user = users[msg.sender];
         require(user.set, "User does not exist");
 
@@ -73,20 +73,19 @@ contract UserInfo {
     }
 
     function addPoints(uint256 points) private {
-        // TODO: restrict this to contract-contract only
         require(points > 0, "Given points is non-positive");
         User storage user = users[msg.sender];
         require(user.set, "User does not exist");
 
         user.points += points;
     }
-    
+
     modifier onlyFlightVal {
         require(msg.sender == allowedCaller, "Invalid caller");
         _;
     }
-    
-    function addTicket(bytes8 bookingNum, address userAddr) public onlyFlightVal {
+
+    function addTicket(bytes8 bookingNum, address userAddr) external onlyFlightVal {
         User storage user = users[userAddr];
         require(user.set, "User does not exist");
 
@@ -97,9 +96,9 @@ contract UserInfo {
             set: true
         });
     }
-    
+
     function updateTicket(
-        bytes8 bookingNum, uint8 newStatus, address userAddr) public onlyFlightVal {
+        bytes8 bookingNum, uint8 newStatus, address userAddr) external onlyFlightVal {
         require(
             newStatus >= 0 && newStatus <= 2,
             "Invalid processing status code for ticket"
@@ -111,4 +110,6 @@ contract UserInfo {
         require(ticket.set, "Ticket does not exist");
         users[userAddr].tickets[bookingNum].processStatus = newStatus;
     }
+
+    // INSURANCES
 }

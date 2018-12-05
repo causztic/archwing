@@ -3,8 +3,8 @@ import "oraclize-api/usingOraclize.sol";
 import "jsmnsol-lib/JsmnSolLib.sol";
 
 contract UserInfo {
-    function addTicket(bytes8, address) public {}
-    function updateTicket(bytes8, uint8, address) public {}
+    function addTicket(bytes8, address) external {}
+    function updateTicket(bytes8, uint8, address) external {}
 }
 
 contract FlightValidity is usingOraclize {
@@ -27,7 +27,7 @@ contract FlightValidity is usingOraclize {
 
     function __callback(bytes32 queryId, string result) public {
         require(msg.sender == oraclize_cbAddress(), "Wrong sender");
-        // This can only be called by oraclize when the query 
+        // This can only be called by oraclize when the query
         // with the queryId completes
         require(flightMappings[queryId].set, "Invalid queryId");
         emit LogCallback(result);
@@ -54,7 +54,7 @@ contract FlightValidity is usingOraclize {
     }
 
     function checkFlightDetails(
-        bytes8 bookingNumber, string queryString) public payable {
+        bytes8 bookingNumber, string queryString) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
