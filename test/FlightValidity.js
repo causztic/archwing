@@ -1,11 +1,14 @@
 require('truffle-test-utils').init();
 const { promisifyLogWatch } = require("./utils");
 const FlightValidity = artifacts.require('FlightValidity');
+const UserInfo = artifacts.require('UserInfo');
 
 contract('FlightValidity', () => {
   it("should do stuff", async () => {
-    const instance = await FlightValidity.deployed();
-    let response = await instance.checkFlightDetails("AAAAA", "?booking_number=AAAAA");
+    const flightInst = await FlightValidity.deployed();
+    const userInst = await UserInfo.deployed();
+    await userInst.createUser();
+    let response = await flightInst.checkFlightDetails("AAAAA", "?booking_number=AAAAA");
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -14,7 +17,10 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      instance.LogCallback({ fromBlock: 'latest' }));
+      flightInst.LogCallback({ fromBlock: 'latest' }));
+    const logJson = await promisifyLogWatch(
+      flightInst.LogJsonParse({ fromBlock: 'latest' }));
     console.log(logResult);
+    console.log(logJson);
   })
 });

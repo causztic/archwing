@@ -66,7 +66,7 @@ contract UserInfo {
 
         Ticket storage ticket = user.tickets[bookingNum];
         require(!ticket.set, "Ticket already added");
-        users[msg.sender].tickets[bookingNum] = Ticket({
+        users[userAddr].tickets[bookingNum] = Ticket({
             processStatus: 0,
             set: true
         });
@@ -83,6 +83,6 @@ contract UserInfo {
 
         Ticket storage ticket = user.tickets[bookingNum];
         require(ticket.set, "Ticket does not exist");
-        users[msg.sender].tickets[bookingNum].processStatus = newStatus;
+        users[userAddr].tickets[bookingNum].processStatus = newStatus;
     }
 }

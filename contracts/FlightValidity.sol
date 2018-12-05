@@ -10,7 +10,7 @@ contract UserInfo {
 contract FlightValidity is usingOraclize {
     struct UserBooking {
         bytes8 bookingNum;
-        address origin;
+        address userAddr;
         bool set;
     }
 
@@ -33,22 +33,22 @@ contract FlightValidity is usingOraclize {
         emit LogCallback(result);
 
         // Parse resulting JSON string
-        // uint returnVal;
-        // JsmnSolLib.Token[] memory tokens;
-        // uint numTokens;
-        // (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
-        // JsmnSolLib.Token memory t = tokens[2];
-        // string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
-        // emit LogJsonParse(jsonElement);
+        uint returnVal;
+        JsmnSolLib.Token[] memory tokens;
+        uint numTokens;
+        (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
+        JsmnSolLib.Token memory t = tokens[2];
+        string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
+        emit LogJsonParse(jsonElement);
 
         // jsonElement will be 'false' if no ticket is returned
-        // bytes8 bookingNum = flightMappings[queryId].bookingNum;
-        // address origin = flightMappings[queryId].origin;
-        // uint8 processStatus = 1;
-        // if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
-        //     processStatus = 2;
-        // }
-        // ui.updateTicket(bookingNum, processStatus, origin);
+        bytes8 bookingNum = flightMappings[queryId].bookingNum;
+        address userAddr = flightMappings[queryId].userAddr;
+        uint8 processStatus = 1;
+        if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
+            processStatus = 2;
+        }
+        ui.updateTicket(bookingNum, processStatus, userAddr);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
@@ -72,10 +72,10 @@ contract FlightValidity is usingOraclize {
             );
             flightMappings[queryId] = UserBooking({
                 bookingNum: bookingNumber,
-                origin: msg.sender,
+                userAddr: msg.sender,
                 set: true
             });
-            // ui.addTicket(bookingNumber, msg.sender);
+            ui.addTicket(bookingNumber, msg.sender);
         }
     }
 }
