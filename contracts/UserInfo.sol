@@ -53,21 +53,21 @@ contract UserInfo {
         return user.points;
     }
 
-    function removePoints(uint256 points) private {
-        require(points > 0, "Given points is non-positive");
-        User storage user = users[msg.sender];
-        require(user.set, "User does not exist");
+    // function removePoints(uint256 points) private {
+    //     require(points > 0, "Given points is non-positive");
+    //     User storage user = users[msg.sender];
+    //     require(user.set, "User does not exist");
 
-        user.points -= points;
-    }
+    //     user.points -= points;
+    // }
 
-    function addPoints(uint256 points) private {
-        require(points > 0, "Given points is non-positive");
-        User storage user = users[msg.sender];
-        require(user.set, "User does not exist");
+    // function addPoints(uint256 points) private {
+    //     require(points > 0, "Given points is non-positive");
+    //     User storage user = users[msg.sender];
+    //     require(user.set, "User does not exist");
 
-        user.points += points;
-    }
+    //     user.points += points;
+    // }
 
     // TICKETS
 
@@ -138,6 +138,25 @@ contract UserInfo {
     function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) public payable {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
-        require(user.tickets[bookingNumber].set, "bookingNumber not found");
+        Ticket storage ticket = user.tickets[bookingNumber];
+        require(ticket.set, "bookingNumber not found");
+        require(ticket.processStatus == 2, "Invalid ticket status");
+
+        if (buyWithLoyalty) {
+            uint256 pointsToDeduct = 150;
+
+            if (ticket.ticketType == 0) {
+                pointsToDeduct = 100;
+            }
+
+            require(user.points >= pointsToDeduct);
+            user.points -= pointsToDeduct;
+            user.insurances[bookingNumber] = Coverage.Insurance({
+                claimStatus: 0,
+                set: true
+            });
+        } else {
+            // buy normally
+        }
     }
 }
