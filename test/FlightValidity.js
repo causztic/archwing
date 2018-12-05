@@ -15,9 +15,6 @@ contract('FlightValidity', () => {
 
     const logResult = await promisifyLogWatch(
       instance.LogCallback({ fromBlock: 'latest' }));
-    const logJson = await promisifyLogWatch(
-      instance.LogJsonParse({ fromBlock: 'latest' }));
     console.log(logResult);
-    console.log(logJson);
   })
 });
