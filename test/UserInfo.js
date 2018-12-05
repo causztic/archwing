@@ -13,7 +13,7 @@ contract('UserInfo', () => {
     }
     assert.ok(err instanceof Error);
   })
-  
+
   it('should create a new user when not created yet', async () => {
     let instance = await UserInfo.deployed();
     userExists = await instance.userExists();
@@ -37,4 +37,11 @@ contract('UserInfo', () => {
     }
     assert.ok(err instanceof Error)
   });
+
+  it('should get a list of tickets', async () => {
+    let instance = await UserInfo.deployed();
+    let tickets = await instance.getTickets();
+    assert.lengthOf(tickets, 2, 'tickets will return booking number and process status');
+  });
+
 });

@@ -10,7 +10,8 @@ contract UserInfo {
     struct User {
         mapping(bytes8 => Ticket) tickets;
         mapping(uint256 => Coverage.Insurance) insurances;
-        uint256 insuranceSize;
+        bytes8[] bookingNumbers;
+        uint256  insuranceSize;
         // LIMITATION: Copying of type struct Coverage.Insurance memory[] memory to storage not yet supported
         // Coverage.Insurance[] insurances;
         uint256 points;
@@ -20,24 +21,9 @@ contract UserInfo {
     address allowedCaller;
     mapping(address => User) private users;
 
-    function setAllowedCaller(address contractAddr) public {
+    function setAllowedCaller(address contractAddr) external {
         require(allowedCaller == address(0), "Allowed caller already set");
         allowedCaller = contractAddr;
-    }
-
-    function getInsurances() public view returns (bytes8[], byte[]) {
-        User storage user = users[msg.sender];
-        require(user.set, "User is not set");
-
-        bytes8[]  memory bookingNumbers  = new bytes8[](user.insuranceSize);
-        byte[]    memory claimStatus = new byte[](user.insuranceSize);
-
-        for (uint i = 0; i < user.insuranceSize; i++) {
-            Coverage.Insurance storage insurance = user.insurances[i];
-            bookingNumbers[i] = insurance.bookingNumber;
-            claimStatus[i] = insurance.claimStatus;
-        }
-        return (bookingNumbers, claimStatus);
     }
 
     function userExists() external view returns (bool) {
@@ -51,6 +37,7 @@ contract UserInfo {
         require(!user.set, "User already exists");
         // Store the user
         users[msg.sender] = User({
+            bookingNumbers: new bytes8[](0),
             insuranceSize: 0,
             points: 0,
             set: true
@@ -80,6 +67,23 @@ contract UserInfo {
         user.points += points;
     }
 
+    // TICKETS
+
+    function getTickets() external view returns (bytes8[], uint8[]) {
+        User storage user = users[msg.sender];
+        require(user.set, "User does not exist");
+
+        bytes8[]  memory bookingNumbers  = new bytes8[](user.bookingNumbers.length);
+        uint8[]    memory processStatus = new uint8[](user.bookingNumbers.length);
+
+        for (uint i = 0; i < user.bookingNumbers.length; i++) {
+            bookingNumbers[i] = user.bookingNumbers[i];
+            Ticket storage ticket = user.tickets[bookingNumbers[i]];
+            processStatus[i] = ticket.processStatus;
+        }
+        return (bookingNumbers, processStatus);
+    }
+
     modifier onlyFlightVal {
         require(msg.sender == allowedCaller, "Invalid caller");
         _;
@@ -91,10 +95,11 @@ contract UserInfo {
 
         Ticket storage ticket = user.tickets[bookingNum];
         require(!ticket.set, "Ticket already added");
-        users[userAddr].tickets[bookingNum] = Ticket({
+        user.tickets[bookingNum] = Ticket({
             processStatus: 0,
             set: true
         });
+        user.bookingNumbers.push(bookingNum);
     }
 
     function updateTicket(
@@ -112,4 +117,18 @@ contract UserInfo {
     }
 
     // INSURANCES
+    function getInsurances() external view returns (bytes8[], byte[]) {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+
+        bytes8[]  memory bookingNumbers  = new bytes8[](user.insuranceSize);
+        byte[]    memory claimStatus = new byte[](user.insuranceSize);
+
+        for (uint i = 0; i < user.insuranceSize; i++) {
+            Coverage.Insurance storage insurance = user.insurances[i];
+            bookingNumbers[i] = insurance.bookingNumber;
+            claimStatus[i] = insurance.claimStatus;
+        }
+        return (bookingNumbers, claimStatus);
+    }
 }

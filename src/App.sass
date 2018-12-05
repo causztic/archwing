@@ -132,3 +132,22 @@ ul
       margin: 0 0 15px 12.5%
       width: 75%
       display: block
+
+.pending-ticket
+  display: flex
+  justify-content: center
+  align-items: center
+  .booking-number
+    margin-right: 1em
+    font-weight: bold
+  .process-status
+    padding: 5px
+    &.valid
+      background-color: greenyellow
+      color: $steel
+    &.invalid
+      background-color: red
+      color: $white
+    &.pending
+      background-color: $denim
+      color: $white

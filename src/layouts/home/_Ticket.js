@@ -1,13 +1,14 @@
-import React from 'react';
+import React, {Component} from 'react';
 import pdfjsLib from 'pdfjs-dist';
 import Web3 from 'web3';
+import PropTypes from "prop-types";
 
 import { parseTicketPDF, constructQuery } from '../../util/ticket';
 
-class Ticket extends React.Component {
-  constructor(props) {
+class Ticket extends Component {
+  constructor(props, context) {
     super(props);
-    this.flightValidity = this.props.flightValidity;
+    this.contracts = context.drizzle.contracts;
     this.state = {
       ticket1: null,
       ticket2: null
@@ -63,7 +64,8 @@ class Ticket extends React.Component {
     const queryStr = constructQuery(this.state.ticket1);
     console.log(bookingNum);
     console.log(queryStr);
-    this.flightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr);
+    this.setState({ ticket1: null });
   }
 
   render() {
@@ -78,5 +80,9 @@ class Ticket extends React.Component {
     )
   }
 }
+
+Ticket.contextTypes = {
+  drizzle: PropTypes.object
+};
 
 export default Ticket
