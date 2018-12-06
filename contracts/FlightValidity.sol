@@ -17,7 +17,7 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogCallback(bytes8 bookingNumber, uint256 processStatus, string arrivalTime, int status);
+    event LogCallback(bytes8 bookingNumber, uint256 processStatus, uint arrivalTime);
 
     mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
@@ -57,12 +57,10 @@ contract FlightValidity is usingOraclize {
             JsmnSolLib.Token[] memory tokens;
             uint numTokens;
 
-            (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 12);
+            (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 11);
             assert(returnVal == 0);
             JsmnSolLib.Token memory t = tokens[6];
-            string memory arrivalTime = JsmnSolLib.getBytes(result, t.start, t.end);
-            t = tokens[10];
-            int status = JsmnSolLib.parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
+            uint arrivalTime = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
 
             // ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
@@ -72,13 +70,15 @@ contract FlightValidity is usingOraclize {
             bytes8 bookingNum = flightMappings[queryId].bookingNum;
             address userAddr = flightMappings[queryId].userAddr;
             uint256 processStatus = 1;
-            if (block.timestamp < parseInt(arrivalTime)) {
+            if (block.timestamp < arrivalTime) {
                 processStatus = 2;
             }
             ui.updateTicket(bookingNum, processStatus, userAddr);
-            emit LogCallback(bookingNum, processStatus, arrivalTime, status);
+            emit LogCallback(bookingNum, processStatus, arrivalTime);
 
             if (flightMappings[queryId].claimInsurance) {
+                t = tokens[10];
+                int status = JsmnSolLib.parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
                 // continue the callback to claim the insurance.
                 ui.claimInsurance(bookingNum, userAddr, status);
             }

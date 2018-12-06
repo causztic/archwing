@@ -11,7 +11,7 @@ contract('FlightValidity', () => {
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
     await userInst.createUser();
-    let response = await flightInst.checkFlightDetails("AAAAG", "?booking_number=AAAAG");
+    let response = await flightInst.checkFlightDetails("AAAAG", "?booking_number=AAAAG", { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
