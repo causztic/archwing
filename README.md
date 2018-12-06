@@ -78,11 +78,6 @@ truffle test  # for contract testing
 npm run test  # for React testing
 ```
 
-_**Note:**_ For Truffle testing, delete all contracts `.json` from `/build` before doing so. This is because some of our
-contracts depend on each other, and the address to the depended contract is stored in these `.json`. `truffle test`
-also migrates contracts but DOES NOT modify these `.json` files. If the build files are not deleted, the contracts
-won't be able to call other contracts' functions.
-
 ## Building
 
 ```sh
