@@ -25,6 +25,5 @@ contract('ConversionRate', () => {
     const eventWrapper = { 'logs': [log] }
     assert.web3Event(eventWrapper, { event: 'LogCallback' });
     assert.isNotNull(log.args.price, 'Price returned was null.');
-    // console.log(log.args.price);
   });
 });

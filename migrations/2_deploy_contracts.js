@@ -6,5 +6,4 @@ const ConversionRate = artifacts.require("ConversionRate");
 module.exports = function(deployer) {
   deployer.deploy(Coverage);
   deployer.deploy(ConversionRate);
-  deployer.deploy(UserInfo);
 };

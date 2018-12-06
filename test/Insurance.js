@@ -1,5 +1,6 @@
 /* eslint-disable */
 require('truffle-test-utils').init();
+
 const { promisifyLogWatch } = require("./utils");
 const FlightValidity = artifacts.require('FlightValidity');
 const UserInfo = artifacts.require('UserInfo');
@@ -13,11 +14,10 @@ contract('Insurance', async (accounts) => {
   });
 
   it('should not allow buying of insurances for invalid tickets', async () => {
-
+    const invalidBooking = "AAAAA";
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
-    await userInst.createUser();
-    let response = await flightInst.checkFlightDetails("AAAAA", "?booking_number=AAAAA");
+    let response = await flightInst.checkFlightDetails(invalidBooking, `?booking_number=${invalidBooking}`);
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -31,9 +31,46 @@ contract('Insurance', async (accounts) => {
     assert.web3Event(eventWrapper, {
       event: 'LogNewTicket',
       args: {
-        bookingNumber: "AAAAA",
+        bookingNumber: "0x4141414141000000", // ascii of AAAAAA
         processStatus: 1 // invalid
       }
     })
+
+    let err = null;
+    try {
+      await userInst.buyInsurance(invalidBooking, false);
+    } catch (error) {
+      err = error
+    }
+    assert.ok(err instanceof Error);
+  });
+
+  // these tests will fail after AAAAG expires in the mock API.
+  it('should allow buying of insurances for valid tickets', async () => {
+    const validBooking = "AAAAG";
+    const flightInst = await FlightValidity.deployed();
+    const userInst = await UserInfo.deployed();
+    let response = await flightInst.checkFlightDetails(validBooking, `?booking_number=${validBooking}`, { value: 1E18});
+    assert.web3Event(response, {
+      event: 'LogNewOraclizeQuery',
+      args: {
+        description: 'Oraclize query was sent, standing by for the answer..'
+      }
+    });
+
+    const logResult = await promisifyLogWatch(
+      userInst.LogNewTicket({ fromBlock: 'latest' }));
+    const eventWrapper = { 'logs': [logResult] }
+    assert.web3Event(eventWrapper, {
+      event: 'LogNewTicket',
+      args: {
+        bookingNumber: "0x4141414147000000", // ascii of AAAAAG
+        processStatus: 2 // valid
+      }
+    })
+
+    await userInst.buyInsurance(validBooking, false);
+    let insurance = await instance.getInsurance(validBooking);
+    assert.deepStrictEqual(insurance, [[validBooking], [0]]);
   });
 });

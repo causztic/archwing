@@ -15,8 +15,8 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogCallback(string result);
-    event LogJsonParse(string element);
+    event LogCallback(bytes8 bookingNumber, uint256 processStatus);
+
     mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
 
@@ -25,30 +25,50 @@ contract FlightValidity is usingOraclize {
         ui = UserInfo(uiAddr);
     }
 
+    function strCompare(string _a, string _b) pure internal returns (int) {
+        bytes memory a = bytes(_a);
+        bytes memory b = bytes(_b);
+        uint minLength = a.length;
+        if (b.length < minLength) minLength = b.length;
+        for (uint i = 0; i < minLength; i ++)
+            if (a[i] < b[i])
+                return - 1;
+            else if (a[i] > b[i])
+                return 1;
+        if (a.length < b.length)
+            return - 1;
+        else if (a.length > b.length)
+            return 1;
+        else
+            return 0;
+    }
+
     function __callback(bytes32 queryId, string result) public {
         require(msg.sender == oraclize_cbAddress(), "Wrong sender");
         // This can only be called by oraclize when the query
         // with the queryId completes
         require(flightMappings[queryId].set, "Invalid queryId");
-        emit LogCallback(result);
 
         // Parse resulting JSON string
         uint returnVal;
         JsmnSolLib.Token[] memory tokens;
         uint numTokens;
-        (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 4);
+
+        (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 10);
         JsmnSolLib.Token memory t = tokens[2];
         string memory jsonElement = JsmnSolLib.getBytes(result, t.start, t.end);
-        emit LogJsonParse(jsonElement);
 
-        // jsonElement will be 'false' if no ticket is returned
+        // jsonElement will be 'false' if no ticket is returned.
+        // otherwise it is the timestamp of arrival.
+
         bytes8 bookingNum = flightMappings[queryId].bookingNum;
         address userAddr = flightMappings[queryId].userAddr;
         uint256 processStatus = 1;
-        if (returnVal == 0 && JsmnSolLib.parseBool(jsonElement)) {
+        if (strCompare(jsonElement, 'false') != 0 && block.timestamp < parseInt(jsonElement)) {
             processStatus = 2;
         }
         ui.updateTicket(bookingNum, processStatus, userAddr);
+        emit LogCallback(bookingNum, processStatus);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }

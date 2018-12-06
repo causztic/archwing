@@ -23,15 +23,24 @@ contract UserInfo {
 
     address private allowedCaller;
     address private owner;
-    mapping(address => User) private users;
+    ConversionRate private cr;
 
-    constructor() public {
+    mapping(address => User) private users;
+    event LogNewTicket(bytes8 bookingNumber, uint256 processStatus);
+
+    constructor(address conversionAddr) public payable {
+        require(msg.value > 50 ether);
         owner = msg.sender;
+        cr = ConversionRate(conversionAddr);
     }
 
     modifier onlyFlightVal {
         require(msg.sender == allowedCaller, "Invalid caller");
         _;
+    }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 
     function setAllowedCaller(address contractAddr) external {
@@ -121,10 +130,21 @@ contract UserInfo {
 
         Ticket storage ticket = user.tickets[bookingNum];
         require(ticket.set, "Ticket does not exist");
-        users[userAddr].tickets[bookingNum].processStatus = newStatus;
+        ticket.processStatus = newStatus;
+        emit LogNewTicket(bookingNum, ticket.processStatus);
     }
 
     // INSURANCES
+    function getInsurance(bytes8 bookingNumber) external view returns (bytes8, uint256) {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        require(insurance.set, "Insurance not found.");
+
+        return (bookingNumber, insurance.claimStatus);
+    }
+
     function getInsurances() external view returns (bytes8[], uint256[]) {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
@@ -150,7 +170,7 @@ contract UserInfo {
         if (buyWithLoyalty) {
             uint256 pointsToDeduct = 150;
 
-            if (ticket.ticketType == 0) {
+            if (ticket.ticketType == 0) { // single trip
                 pointsToDeduct = 100;
             }
 
@@ -161,7 +181,31 @@ contract UserInfo {
                 set: true
             });
         } else {
-            // buy normally
+            // buy normally.
+            uint256 cost = 30e18;
+            // in SGD, multiplied by the nomination of wei. this way we can do division without floating points as accurately as possible
+
+            if (ticket.ticketType == 0) { // single trip
+                cost = 20e18;
+            }
+
+            // ideally we should poll for the updated exchange rate here
+            uint256 price = cr.getConversionToSGD();
+
+            // e.g. price is 15000 for $150 per ether.
+            // if $30, $30/$150 would be 0.2 ether. to avoid floating points, we do 30*(1e18-1e15)/150 = 200 finney == 0.2 ether.
+            // with this reasoning, we can do 30e18/150 to obtain the same value in wei.
+            cost = cost / price;
+            // ensure that the company has enough to pay for the cancelled tickets.
+            // we are assuming only one insurance is bought for the entire DApp.
+            // Otherwise, we'll need to calculate the total number of insurances bought and the cap needed etc etc.
+            require(5000e18 / price <= getBalance(), "Company is broke! Don't buy from us.");
+            require(cost <= msg.value);
+
+            user.insurances[bookingNumber] = Coverage.Insurance({
+                claimStatus: 0,
+                set: true
+            });
         }
     }
 }
