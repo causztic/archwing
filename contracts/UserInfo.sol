@@ -191,6 +191,7 @@ contract UserInfo {
 
             // ideally we should poll for the updated exchange rate here
             uint256 price = cr.getConversionToSGD();
+            assert(price > 0);
 
             // e.g. price is 15000 for $150 per ether.
             // if $30, $30/$150 would be 0.2 ether. to avoid floating points, we do 30*(1e18-1e15)/150 = 200 finney == 0.2 ether.
@@ -199,7 +200,7 @@ contract UserInfo {
             // ensure that the company has enough to pay for the cancelled tickets.
             // we are assuming only one insurance is bought for the entire DApp.
             // Otherwise, we'll need to calculate the total number of insurances bought and the cap needed etc etc.
-            require(5000e18 / price <= getBalance(), "Company is broke! Don't buy from us.");
+            require((5000e18 / price) <= getBalance(), "Company is broke! Don't buy from us.");
             require(cost <= msg.value);
 
             user.insurances[bookingNumber] = Coverage.Insurance({
