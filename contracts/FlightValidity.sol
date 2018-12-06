@@ -101,7 +101,7 @@ contract FlightValidity is usingOraclize {
             }
         }
 
-        ui.updateTicket(bookingNum, processStatus, userAddr);
+        // ui.updateTicket(bookingNum, processStatus, userAddr);
         emit LogStatusArrival(bookingNum, processStatus, arrivalTime);
         // Delete to prevent double calling
         delete flightMappings[queryId];

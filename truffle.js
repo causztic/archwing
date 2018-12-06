@@ -4,7 +4,12 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      network_id: "*" // Match any network i,d
+      network_id: "*" // Match any network id
+    },
+    production: {
+      host: "localhost",
+      port: 8545,
+      network_id: "*" // Match any network id
     }
   },
   solc: {
