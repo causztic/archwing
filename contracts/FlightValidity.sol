@@ -17,7 +17,7 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogStatusArrival(bytes8 bookingNumber, uint256 processStatus, uint256 arrivalTime);
+    event LogFlightStatus(bytes8 bookingNumber, uint256 processStatus, uint256 departureTime);
 
     mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
@@ -72,7 +72,7 @@ contract FlightValidity is usingOraclize {
         bytes8 bookingNum = flightMappings[queryId].bookingNum;
         address userAddr = flightMappings[queryId].userAddr;
         uint256 processStatus = 1;
-        uint256 arrivalTime;
+        uint256 departureTime;
         if (strCompare(result, "false") != 0) {
             // Parse resulting JSON string
             uint returnVal;
@@ -81,33 +81,33 @@ contract FlightValidity is usingOraclize {
 
             (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 11);
             assert(returnVal == 0);
-            JsmnSolLib.Token memory t = tokens[2];
-            arrivalTime = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
+            JsmnSolLib.Token memory t = tokens[10];
+            departureTime = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
 
             // Ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
             // However, we left that condition check out so that we can use our mock endpoint, which does not have
             // dynamic status capabilities.
 
-            if (block.timestamp < arrivalTime) {
+            if (block.timestamp < departureTime) {
                 processStatus = 2;
             }
 
             if (flightMappings[queryId].claimInsurance) {
-                t = tokens[10];
+                t = tokens[6];
                 int status = JsmnSolLib.parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
                 // Continue the callback to claim the insurance.
                 ui.claimInsurance(bookingNum, userAddr, status);
             }
         }
 
-        ui.updateTicket(bookingNum, processStatus, userAddr);
-        emit LogStatusArrival(bookingNum, processStatus, arrivalTime);
+        // ui.updateTicket(bookingNum, processStatus, userAddr);
+        emit LogFlightStatus(bookingNum, processStatus, departureTime);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, bool claimInsurance) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
@@ -126,12 +126,15 @@ contract FlightValidity is usingOraclize {
             flightMappings[queryId] = UserBooking({
                 bookingNum: bookingNumber,
                 userAddr: msg.sender,
-                claimInsurance: false,
+                claimInsurance: claimInsurance,
                 set: true
             });
-            ui.addTicket(bookingNumber, msg.sender);
+
+            if (!claimInsurance) {
+                ui.addTicket(bookingNumber, msg.sender);
+            }
         }
     }
-    
+
     // Removed startClaimInsurance, caz its basically the same as above
 }

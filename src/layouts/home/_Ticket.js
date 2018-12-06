@@ -62,7 +62,7 @@ class Ticket extends Component {
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
     console.log(bookingNum);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
     this.setState({ ticket1: null });
   }
 
