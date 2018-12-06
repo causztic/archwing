@@ -64,7 +64,7 @@ class Ticket extends Component {
     const queryStr = constructQuery(this.state.ticket1);
     console.log(bookingNum);
     console.log(queryStr);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr, false);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr);
     this.setState({ ticket1: null });
   }
 
