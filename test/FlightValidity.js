@@ -11,7 +11,7 @@ contract('FlightValidity', () => {
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
     await userInst.createUser();
-    let response = await flightInst.checkFlightDetails("AAAAG", { value: 1E18 });
+    let response = await flightInst.checkFlightDetails("AAAAG");
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -20,13 +20,14 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      flightInst.LogCallback({ fromBlock: 'latest' }));
+      flightInst.LogStatusArrival({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogCallback',
+      event: 'LogStatusArrival',
       args: {
         bookingNumber: "0x4141414147000000",
-        processStatus: 2
+        processStatus: 2,
+        arrivalTime: 1546412160
       }
     })
   })

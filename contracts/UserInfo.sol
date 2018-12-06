@@ -1,10 +1,7 @@
 pragma solidity ^0.4.24;
 
 import { Coverage } from "./Coverage.sol";
-
-contract ConversionRate {
-    function getConversionToSGD() external view returns (uint256) {}
-}
+import { ConversionRate } from "./ConversionRate.sol";
 
 contract UserInfo {
     struct Ticket {
@@ -186,7 +183,7 @@ contract UserInfo {
             // in SGD, multiplied by the nomination of wei. this way we can do division without floating points as accurately as possible
 
             if (ticket.ticketType == 0) {
-               cost = 20e18;
+                cost = 20e18;
             }
 
             // ideally we should poll for the updated exchange rate here
@@ -216,12 +213,12 @@ contract UserInfo {
         });
     }
 
-    // we follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
+    // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
     // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
     function claimInsurance(bytes8 bookingNumber, address userAddr, int status) external onlyFlightVal {
         User storage user = users[userAddr];
         require(user.set, "User is not set");
-        Coverage.Insurance storage insurance =  user.insurances[bookingNumber];
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
         require(insurance.set, "Insurance not found.");
         require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");
         // ideally we should poll for the updated exchange rate here
