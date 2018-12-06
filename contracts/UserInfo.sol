@@ -167,20 +167,14 @@ contract UserInfo {
         Ticket storage ticket = user.tickets[bookingNumber];
         require(ticket.set, "bookingNumber not found");
         require(ticket.processStatus == 2, "Invalid ticket status");
-
         if (buyWithLoyalty) {
             uint256 pointsToDeduct = 150;
 
             if (ticket.ticketType == 0) { // single trip
                 pointsToDeduct = 100;
             }
-
             require(user.points >= pointsToDeduct);
             user.points -= pointsToDeduct;
-            user.insurances[bookingNumber] = Coverage.Insurance({
-                claimStatus: 0,
-                set: true
-            });
         } else {
             // buy normally.
             uint256 cost = 30e18;
@@ -203,11 +197,10 @@ contract UserInfo {
             // Otherwise, we'll need to calculate the total number of insurances bought and the cap needed etc etc.
             require((5000e18 / price) <= getBalance(), "Company is broke! Don't buy from us.");
             require(cost <= msg.value, "Not enough money!");
-
-            user.insurances[bookingNumber] = Coverage.Insurance({
-                claimStatus: 0,
-                set: true
-            });
         }
+        user.insurances[bookingNumber] = Coverage.Insurance({
+            claimStatus: 0,
+            set: true
+        });
     }
 }

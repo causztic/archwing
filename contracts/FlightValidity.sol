@@ -61,6 +61,11 @@ contract FlightValidity is usingOraclize {
         // jsonElement will be 'false' if no ticket is returned.
         // otherwise it is the timestamp of arrival.
 
+        // ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
+        // people from purchasing future tickets that have already been cancelled.
+        // However, we left that condition check out so that we can use our mock endpoint, which does not have
+        // dynamic status capabilities.
+
         bytes8 bookingNum = flightMappings[queryId].bookingNum;
         address userAddr = flightMappings[queryId].userAddr;
         uint256 processStatus = 1;
