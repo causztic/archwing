@@ -103,7 +103,7 @@ contract FlightValidity is usingOraclize {
                 strConcat(
                     "json(https://archwing-bookings.herokuapp.com/ticket",
                     queryString,
-                    ").ticket."
+                    ").ticket"
                 )
             );
             flightMappings[queryId] = UserBooking({
