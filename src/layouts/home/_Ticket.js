@@ -3,7 +3,7 @@ import pdfjsLib from 'pdfjs-dist';
 import Web3 from 'web3';
 import PropTypes from "prop-types";
 
-import { parseTicketPDF, constructQuery } from '../../util/ticket';
+import { parseTicketPDF } from '../../util/ticket';
 
 class Ticket extends Component {
   constructor(props, context) {
@@ -61,10 +61,8 @@ class Ticket extends Component {
       return;
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-    const queryStr = constructQuery(this.state.ticket1);
     console.log(bookingNum);
-    console.log(queryStr);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, queryStr);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum);
     this.setState({ ticket1: null });
   }
 

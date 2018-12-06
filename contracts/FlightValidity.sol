@@ -45,6 +45,23 @@ contract FlightValidity is usingOraclize {
             return 0;
     }
 
+    function bytes8ToString(bytes8 x) pure internal returns (string) {
+        bytes memory bytesString = new bytes(8);
+        uint charCount = 0;
+        for (uint j = 0; j < 8; j++) {
+            byte char = byte(bytes32(uint(x) * 2 ** (8 * j)));
+            if (char != 0) {
+                bytesString[charCount] = char;
+                charCount++;
+            }
+        }
+        bytes memory bytesStringTrimmed = new bytes(charCount);
+        for (j = 0; j < charCount; j++) {
+            bytesStringTrimmed[j] = bytesString[j];
+        }
+        return string(bytesStringTrimmed);
+    }
+
     function __callback(bytes32 queryId, string result) public {
         require(msg.sender == oraclize_cbAddress(), "Wrong sender");
         // This can only be called by oraclize when the query
@@ -88,7 +105,7 @@ contract FlightValidity is usingOraclize {
     }
 
     function checkFlightDetails(
-        bytes8 bookingNumber, string queryString) external payable {
+        bytes8 bookingNumber) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
@@ -101,8 +118,8 @@ contract FlightValidity is usingOraclize {
             bytes32 queryId = oraclize_query(
                 "URL",
                 strConcat(
-                    "json(https://archwing-bookings.herokuapp.com/ticket",
-                    queryString,
+                    "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
+                    bytes8ToString(bookingNumber),
                     ").ticket"
                 )
             );
@@ -129,8 +146,8 @@ contract FlightValidity is usingOraclize {
             bytes32 queryId = oraclize_query(
                 "URL",
                 strConcat(
-                    "json(https://archwing-bookings.herokuapp.com/ticket",
-                    queryString,
+                    "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
+                    bytes8ToString(bookingNumber),
                     ").ticket"
                 )
             );
