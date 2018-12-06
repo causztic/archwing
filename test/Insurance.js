@@ -74,5 +74,24 @@ contract('Insurance', async (accounts) => {
     let insurance = await userInst.getInsurance(validBooking);
     assert.strictEqual(insurance[0], validBookingAscii);
     assert.strictEqual(insurance[1].toNumber(), 0);
+
+    let points = await userInst.getPoints();
+    assert.strictEqual(points.toNumber(), 10);
+
   });
+
+
+  // it('should not allow claiming of insurances for tickets that have normal status', async () => {
+  //   const validBooking = "AAAAG";
+  //   const validBookingAscii = "0x4141414147000000";
+  //   const userInst = await UserInfo.deployed();
+
+  //   let err = null;
+  //   try {
+  //     await userInst.claimInsurance(validBooking);
+  //   } catch (error) {
+  //     err = error
+  //   }
+  //   assert.ok(err instanceof Error);
+  // });
 });

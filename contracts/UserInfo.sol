@@ -167,10 +167,12 @@ contract UserInfo {
         Ticket storage ticket = user.tickets[bookingNumber];
         require(ticket.set, "bookingNumber not found");
         require(ticket.processStatus == 2, "Invalid ticket status");
+        require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
+
         if (buyWithLoyalty) {
             uint256 pointsToDeduct = 150;
 
-            if (ticket.ticketType == 0) { // single trip
+            if (ticket.ticketType == 0) {
                 pointsToDeduct = 100;
             }
             require(user.points >= pointsToDeduct);
@@ -180,7 +182,7 @@ contract UserInfo {
             uint256 cost = 30e18;
             // in SGD, multiplied by the nomination of wei. this way we can do division without floating points as accurately as possible
 
-            if (ticket.ticketType == 0) { // single trip
+            if (ticket.ticketType == 0) {
                cost = 20e18;
             }
 
@@ -197,10 +199,24 @@ contract UserInfo {
             // Otherwise, we'll need to calculate the total number of insurances bought and the cap needed etc etc.
             require((5000e18 / price) <= getBalance(), "Company is broke! Don't buy from us.");
             require(cost <= msg.value, "Not enough money!");
+
+            // give points when you use cash. do this at the end to prevent re-entrancy attacks.
+            if (ticket.ticketType == 0) {
+                user.points += 10;
+            } else {
+                user.points += 30;
+            }
         }
         user.insurances[bookingNumber] = Coverage.Insurance({
             claimStatus: 0,
             set: true
         });
+    }
+
+    function startClaimInsurance(bytes8 bookingNumber) external view {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+        Coverage.Insurance storage insurance =  user.insurances[bookingNumber];
+        require(insurance.set, "Insurance not found.");
     }
 }
