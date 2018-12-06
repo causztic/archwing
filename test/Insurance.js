@@ -81,17 +81,17 @@ contract('Insurance', async (accounts) => {
   });
 
 
-  // it('should not allow claiming of insurances for tickets that have normal status', async () => {
-  //   const validBooking = "AAAAG";
-  //   const validBookingAscii = "0x4141414147000000";
-  //   const userInst = await UserInfo.deployed();
+  it('should not allow claiming of insurances for tickets that have normal status', async () => {
+    const validBooking = "AAAAG";
+    const validBookingAscii = "0x4141414147000000";
+    const userInst = await UserInfo.deployed();
 
-  //   let err = null;
-  //   try {
-  //     await userInst.claimInsurance(validBooking);
-  //   } catch (error) {
-  //     err = error
-  //   }
-  //   assert.ok(err instanceof Error);
-  // });
+    let err = null;
+    try {
+      await userInst.claimInsurance(validBooking);
+    } catch (error) {
+      err = error
+    }
+    assert.ok(err instanceof Error);
+  });
 });

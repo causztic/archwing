@@ -24,6 +24,7 @@ contract UserInfo {
 
     address private allowedCaller;
     address private owner;
+
     ConversionRate private cr;
 
     mapping(address => User) private users;
@@ -213,10 +214,11 @@ contract UserInfo {
         });
     }
 
-    function startClaimInsurance(bytes8 bookingNumber) external view {
-        User storage user = users[msg.sender];
+    function claimInsurance(bytes8 bookingNumber, address userAddr, int status) external onlyFlightVal {
+        User storage user = users[userAddr];
         require(user.set, "User is not set");
         Coverage.Insurance storage insurance =  user.insurances[bookingNumber];
         require(insurance.set, "Insurance not found.");
+        require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");
     }
 }

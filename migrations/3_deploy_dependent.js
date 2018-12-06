@@ -8,6 +8,7 @@ module.exports = function(deployer) {
     deployer.then(async () => {
         await deployer.deploy(JsmnSolLib);
         await deployer.link(JsmnSolLib, FlightValidity);
+        await ConversionRate.deployed();
         await deployer.deploy(UserInfo, ConversionRate.address, { value: 51E18 });
         await deployer.deploy(FlightValidity, UserInfo.address);
 
