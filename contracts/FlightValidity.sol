@@ -13,49 +13,13 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogFlightStatus(bytes8 bookingNumber, uint256 processStatus, uint256 departureTime);
+    event LogTicketStatus(bytes8 bookingNumber, uint256 processStatus, uint256 departureTime);
 
     mapping (bytes32 => UserBooking) private flightMappings;
     mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public tickets;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
-    }
-
-    function strCompare(string _a, string _b) internal pure returns (int) {
-        bytes memory a = bytes(_a);
-        bytes memory b = bytes(_b);
-        uint minLength = a.length;
-        if (b.length < minLength) minLength = b.length;
-        for (uint i = 0; i < minLength; i ++) {
-            if (a[i] < b[i])
-                return - 1;
-            else if (a[i] > b[i])
-                return 1;
-        }
-        if (a.length < b.length)
-            return - 1;
-        else if (a.length > b.length)
-            return 1;
-        else
-            return 0;
-    }
-
-    function bytes8ToString(bytes8 x) internal pure returns (string) {
-        bytes memory bytesString = new bytes(8);
-        uint charCount = 0;
-        for (uint j = 0; j < 8; j++) {
-            byte char = byte(bytes8(uint(x) * 2 ** (8 * j)));
-            if (char != 0) {
-                bytesString[charCount] = char;
-                charCount++;
-            }
-        }
-        bytes memory bytesStringTrimmed = new bytes(charCount);
-        for (j = 0; j < charCount; j++) {
-            bytesStringTrimmed[j] = bytesString[j];
-        }
-        return string(bytesStringTrimmed);
     }
 
     function __callback(bytes32 queryId, string result) public {
@@ -95,9 +59,9 @@ contract FlightValidity is usingOraclize {
 
         // ui.updateTicket(bookingNum, processStatus, userAddress);
         tickets[userAddress][bookingNumber].processStatus = uint8(processStatus);
-        tickets[userAddress][bookingNumber].flightStatus  = uint8(status);
+        tickets[userAddress][bookingNumber].flightStatus = uint8(status);
 
-        emit LogFlightStatus(bookingNumber, processStatus, departureTime);
+        emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
@@ -133,5 +97,43 @@ contract FlightValidity is usingOraclize {
                 set: true
             });
         }
+    }
+    
+    // UTILS
+    
+    function strCompare(string _a, string _b) internal pure returns (int) {
+        bytes memory a = bytes(_a);
+        bytes memory b = bytes(_b);
+        uint minLength = a.length;
+        if (b.length < minLength) minLength = b.length;
+        for (uint i = 0; i < minLength; i ++) {
+            if (a[i] < b[i])
+                return - 1;
+            else if (a[i] > b[i])
+                return 1;
+        }
+        if (a.length < b.length)
+            return - 1;
+        else if (a.length > b.length)
+            return 1;
+        else
+            return 0;
+    }
+
+    function bytes8ToString(bytes8 x) internal pure returns (string) {
+        bytes memory bytesString = new bytes(8);
+        uint charCount = 0;
+        for (uint j = 0; j < 8; j++) {
+            byte char = byte(bytes8(uint(x) * 2 ** (8 * j)));
+            if (char != 0) {
+                bytesString[charCount] = char;
+                charCount++;
+            }
+        }
+        bytes memory bytesStringTrimmed = new bytes(charCount);
+        for (j = 0; j < charCount; j++) {
+            bytesStringTrimmed[j] = bytesString[j];
+        }
+        return string(bytesStringTrimmed);
     }
 }

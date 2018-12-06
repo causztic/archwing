@@ -20,10 +20,10 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      flightInst.LogFlightStatus({ fromBlock: 'latest' }));
+      flightInst.LogTicketStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogFlightStatus',
+      event: 'LogTicketStatus',
       args: {
         bookingNumber: "0x4141414147000000",
         processStatus: 2,
@@ -44,10 +44,10 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      flightInst.LogFlightStatus({ fromBlock: 'latest' }));
+      flightInst.LogTicketStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogFlightStatus',
+      event: 'LogTicketStatus',
       args: {
         bookingNumber: "0x4141414130000000",
         processStatus: 1,
@@ -68,10 +68,10 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      flightInst.LogFlightStatus({ fromBlock: 'latest' }));
+      flightInst.LogTicketStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogFlightStatus',
+      event: 'LogTicketStatus',
       args: {
         bookingNumber: "0x4141414141000000",
         processStatus: 1,
