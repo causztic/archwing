@@ -1,4 +1,5 @@
 pragma solidity ^0.4.24;
+
 import { Coverage } from "./Coverage.sol";
 
 contract ConversionRate {
@@ -160,7 +161,7 @@ contract UserInfo {
         return (bookingNumbers, claimStatus);
     }
 
-    function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) public payable {
+    function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) external payable {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
         Ticket storage ticket = user.tickets[bookingNumber];
@@ -186,7 +187,7 @@ contract UserInfo {
             // in SGD, multiplied by the nomination of wei. this way we can do division without floating points as accurately as possible
 
             if (ticket.ticketType == 0) { // single trip
-                cost = 20e18;
+               cost = 20e18;
             }
 
             // ideally we should poll for the updated exchange rate here
@@ -201,7 +202,7 @@ contract UserInfo {
             // we are assuming only one insurance is bought for the entire DApp.
             // Otherwise, we'll need to calculate the total number of insurances bought and the cap needed etc etc.
             require((5000e18 / price) <= getBalance(), "Company is broke! Don't buy from us.");
-            require(cost <= msg.value);
+            require(cost <= msg.value, "Not enough money!");
 
             user.insurances[bookingNumber] = Coverage.Insurance({
                 claimStatus: 0,

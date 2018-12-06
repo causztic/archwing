@@ -5,13 +5,13 @@ const UserInfo = artifacts.require("UserInfo");
 const ConversionRate = artifacts.require("ConversionRate");
 
 module.exports = function(deployer) {
-    deployer.deploy(JsmnSolLib);
-    deployer.link(JsmnSolLib, FlightValidity);
-    deployer.deploy(UserInfo, ConversionRate.address, { value: 51E18}).then(function() {
-      return UserInfo.deployed();
-    }).then(function(instance) {
-        return deployer.deploy(FlightValidity, UserInfo.address).then(function() {
-            return instance.setAllowedCaller(FlightValidity.address);
-        })
+    deployer.then(async () => {
+        await deployer.deploy(JsmnSolLib);
+        await deployer.link(JsmnSolLib, FlightValidity);
+        await deployer.deploy(UserInfo, ConversionRate.address, { value: 51E18 });
+        await deployer.deploy(FlightValidity, UserInfo.address);
+
+        let userInstance = await UserInfo.deployed();
+        return userInstance.setAllowedCaller(FlightValidity.address);
     });
 }

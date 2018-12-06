@@ -48,6 +48,7 @@ contract('Insurance', async (accounts) => {
   // these tests will fail after AAAAG expires in the mock API.
   it('should allow buying of insurances for valid tickets', async () => {
     const validBooking = "AAAAG";
+    const validBookingAscii = "0x4141414147000000";
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
     let response = await flightInst.checkFlightDetails(validBooking, `?booking_number=${validBooking}`, { value: 1E18});
@@ -64,13 +65,15 @@ contract('Insurance', async (accounts) => {
     assert.web3Event(eventWrapper, {
       event: 'LogNewTicket',
       args: {
-        bookingNumber: "0x4141414147000000", // ascii of AAAAAG
+        bookingNumber: validBookingAscii,
         processStatus: 2 // valid
       }
     })
 
-    await userInst.buyInsurance(validBooking, false);
-    let insurance = await instance.getInsurance(validBooking);
-    assert.deepStrictEqual(insurance, [[validBooking], [0]]);
+    await userInst.buyInsurance(validBooking, false, { value: 30E18 });
+    let insurance = await userInst.getInsurance(validBooking);
+    console.log(insurance);
+    assert.strictEqual(insurance[0][0], validBookingAscii);
+    assert.strictEqual(insurance[1][0].toNumber(), 0);
   });
 });
