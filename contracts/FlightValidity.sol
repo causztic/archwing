@@ -2,29 +2,24 @@ pragma solidity ^0.4.24;
 import "oraclize-api/usingOraclize.sol";
 import "jsmnsol-lib/JsmnSolLib.sol";
 
-contract UserInfo {
-    function addTicket(bytes8, address) external {}
-    function updateTicket(bytes8, uint256, address) external {}
-    function claimInsurance(bytes8, address, int) external {}
-}
+import { Coverage } from "./Coverage.sol";
 
 contract FlightValidity is usingOraclize {
+
     struct UserBooking {
-        bytes8 bookingNum;
-        address userAddr;
-        bool claimInsurance;
+        bytes8 bookingNumber;
+        address userAddress;
         bool set;
     }
 
     event LogNewOraclizeQuery(string description);
     event LogFlightStatus(bytes8 bookingNumber, uint256 processStatus, uint256 departureTime);
 
-    mapping (bytes32 => UserBooking) flightMappings;
-    UserInfo ui;
+    mapping (bytes32 => UserBooking) private flightMappings;
+    mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public tickets;
 
-    constructor(address uiAddr) public payable {
+    constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
-        ui = UserInfo(uiAddr);
     }
 
     function strCompare(string _a, string _b) internal pure returns (int) {
@@ -69,10 +64,12 @@ contract FlightValidity is usingOraclize {
         // with the queryId completes
         require(flightMappings[queryId].set, "Invalid queryId");
 
-        bytes8 bookingNum = flightMappings[queryId].bookingNum;
-        address userAddr = flightMappings[queryId].userAddr;
+        bytes8 bookingNumber = flightMappings[queryId].bookingNumber;
+        address userAddress = flightMappings[queryId].userAddress;
+
         uint256 processStatus = 1;
         uint256 departureTime;
+        uint256 status;
         if (strCompare(result, "false") != 0) {
             // Parse resulting JSON string
             uint returnVal;
@@ -83,6 +80,8 @@ contract FlightValidity is usingOraclize {
             assert(returnVal == 0);
             JsmnSolLib.Token memory t = tokens[10];
             departureTime = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
+            t = tokens[6];
+            status = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
 
             // Ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
@@ -92,22 +91,18 @@ contract FlightValidity is usingOraclize {
             if (block.timestamp < departureTime) {
                 processStatus = 2;
             }
-
-            if (flightMappings[queryId].claimInsurance) {
-                t = tokens[6];
-                int status = JsmnSolLib.parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
-                // Continue the callback to claim the insurance.
-                ui.claimInsurance(bookingNum, userAddr, status);
-            }
         }
 
-        // ui.updateTicket(bookingNum, processStatus, userAddr);
-        emit LogFlightStatus(bookingNum, processStatus, departureTime);
+        // ui.updateTicket(bookingNum, processStatus, userAddress);
+        tickets[userAddress][bookingNumber].processStatus = uint8(processStatus);
+        tickets[userAddress][bookingNumber].flightStatus  = uint8(status);
+
+        emit LogFlightStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber, bool claimInsurance) external payable {
+    function checkFlightDetails(bytes8 bookingNumber) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
@@ -123,18 +118,20 @@ contract FlightValidity is usingOraclize {
                     ").ticket"
                 )
             );
+            if (!tickets[msg.sender][bookingNumber].set) {
+                tickets[msg.sender][bookingNumber] = Coverage.TicketStatus({
+                    processStatus: 0,
+                    ticketType: 0,
+                    flightStatus: 0,
+                    set: true
+                });
+            }
+
             flightMappings[queryId] = UserBooking({
-                bookingNum: bookingNumber,
-                userAddr: msg.sender,
-                claimInsurance: claimInsurance,
+                bookingNumber: bookingNumber,
+                userAddress: msg.sender,
                 set: true
             });
-
-            if (!claimInsurance) {
-                ui.addTicket(bookingNumber, msg.sender);
-            }
         }
     }
-
-    // Removed startClaimInsurance, caz its basically the same as above
 }

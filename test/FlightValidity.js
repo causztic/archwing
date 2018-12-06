@@ -11,7 +11,7 @@ contract('FlightValidity', () => {
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
     await userInst.createUser();
-    let response = await flightInst.checkFlightDetails("AAAAG", false);
+    let response = await flightInst.checkFlightDetails("AAAAG", { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -35,7 +35,7 @@ contract('FlightValidity', () => {
   it("should return with invalid process status if the ticket does not exist", async () => {
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails("AAAA0");
+    let response = await flightInst.checkFlightDetails("AAAA0", { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -59,7 +59,7 @@ contract('FlightValidity', () => {
   it("should return with invalid process status if the ticket has expired", async () => {
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails("AAAAA");
+    let response = await flightInst.checkFlightDetails("AAAAA", { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -68,7 +68,7 @@ contract('FlightValidity', () => {
     });
 
     const logResult = await promisifyLogWatch(
-      flightInst.LogCallback({ fromBlock: 'latest' }));
+      flightInst.LogFlightStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
       event: 'LogFlightStatus',
