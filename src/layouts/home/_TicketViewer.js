@@ -29,7 +29,7 @@ class TicketViewer extends Component {
 
         if (status === "0") {
           statusClass = "pending";
-        } else if (status === "1") {
+        } else if (status === "2") {
           statusClass = "valid";
         }
 
