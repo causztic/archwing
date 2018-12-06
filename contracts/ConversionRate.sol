@@ -11,7 +11,6 @@ contract ConversionRate is usingOraclize {
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
-        // updateConversionToSGD();
     }
 
     function __callback(bytes32, string _result) public {
@@ -30,6 +29,8 @@ contract ConversionRate is usingOraclize {
         return price;
     }
 
+    // Called when the contract is deployed by Truffle
+    // Should also be called periodically to update the conversion rate
     function updateConversionToSGD() public payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");

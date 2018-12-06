@@ -31,7 +31,7 @@ contract('Insurance', async (accounts) => {
     assert.web3Event(eventWrapper, {
       event: 'LogNewTicket',
       args: {
-        bookingNumber: "0x4141414141000000", // ascii of AAAAAA
+        bookingNumber: "0x4141414141000000", // ascii of AAAAA
         processStatus: 1 // invalid
       }
     })
@@ -45,7 +45,7 @@ contract('Insurance', async (accounts) => {
     assert.ok(err instanceof Error);
   });
 
-  // these tests will fail after AAAAG expires in the mock API.
+  // These tests will fail after AAAAG expires (01/2019) in the mock API.
   it('should allow buying of insurances for valid tickets', async () => {
     const validBooking = "AAAAG";
     const validBookingAscii = "0x4141414147000000";
@@ -79,7 +79,6 @@ contract('Insurance', async (accounts) => {
     assert.strictEqual(points.toNumber(), 10);
 
   });
-
 
   it('should not allow claiming of insurances for tickets that have normal status', async () => {
     const validBooking = "AAAAG";
