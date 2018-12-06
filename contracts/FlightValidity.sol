@@ -17,7 +17,7 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogCallback(bytes8 bookingNumber, uint256 processStatus, string element, uint numTokens);
+    event LogCallback(bytes8 bookingNumber, uint256 processStatus, string arrivalTime, int status);
 
     mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
@@ -76,7 +76,7 @@ contract FlightValidity is usingOraclize {
                 processStatus = 2;
             }
             ui.updateTicket(bookingNum, processStatus, userAddr);
-            emit LogCallback(bookingNum, processStatus, arrivalTime, numTokens);
+            emit LogCallback(bookingNum, processStatus, arrivalTime, status);
 
             if (flightMappings[queryId].claimInsurance) {
                 // continue the callback to claim the insurance.
