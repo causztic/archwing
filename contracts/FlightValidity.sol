@@ -49,7 +49,7 @@ contract FlightValidity is usingOraclize {
         bytes memory bytesString = new bytes(8);
         uint charCount = 0;
         for (uint j = 0; j < 8; j++) {
-            byte char = byte(bytes32(uint(x) * 2 ** (8 * j)));
+            byte char = byte(bytes8(uint(x) * 2 ** (8 * j)));
             if (char != 0) {
                 bytesString[charCount] = char;
                 charCount++;
