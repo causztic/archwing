@@ -28,6 +28,8 @@ contract UserInfo {
     ConversionRate private cr;
 
     mapping(address => User) private users;
+    mapping(address => uint) claims;
+
     event LogNewTicket(bytes8 bookingNumber, uint256 processStatus);
 
     constructor(address conversionAddr) public payable {
@@ -214,11 +216,42 @@ contract UserInfo {
         });
     }
 
+    // we follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
+    // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
     function claimInsurance(bytes8 bookingNumber, address userAddr, int status) external onlyFlightVal {
         User storage user = users[userAddr];
         require(user.set, "User is not set");
         Coverage.Insurance storage insurance =  user.insurances[bookingNumber];
         require(insurance.set, "Insurance not found.");
         require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");
+        // ideally we should poll for the updated exchange rate here
+        uint256 price = cr.getConversionToSGD();
+        uint256 payout;
+        assert(price > 0);
+        if (status == 1 && insurance.claimStatus == 0) {
+            // unclaimed delayed flight, add to claims
+            payout = 200e18 / price;
+            insurance.claimStatus += 1;
+        } else if (status == 2) {
+            if (insurance.claimStatus == 0) {
+                // cancelled flight, add 5k to claims
+                payout = 5000e18 / price;
+                insurance.claimStatus += 1;
+            } else if (insurance.claimStatus == 1) {
+                // delayed flight became cancelled, add the remaining 4.8k to claims
+                payout = 4800e18 / price;
+                insurance.claimStatus += 1;
+            }
+            // insurance.claimStatus > 1, means cancelled flight has been claimed.
+        }
+        // status = 0 is normal and cannot be claimed.
+        // status == 1 && insurance.claimStatus > 1, means delayed flight has been claimed.
+        claims[userAddr] += payout;
+    }
+
+    function claimPayouts() external {
+        uint payout = claims[msg.sender];
+        claims[msg.sender] = 0; // clear the payouts before sending over
+        msg.sender.transfer(payout);
     }
 }
