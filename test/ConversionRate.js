@@ -12,7 +12,7 @@ contract('ConversionRate', () => {
 
   it('should update ETH / SGD pairing with the api', async () => {
     let instance = await ConversionRate.deployed();
-    let response = await instance.updateConversionToSGD();
+    let response = await instance.updateConversionToSGD({ value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
