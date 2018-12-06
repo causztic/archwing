@@ -11,6 +11,7 @@ contract ConversionRate is usingOraclize {
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+        updateConversionToSGD();
     }
 
     function __callback(bytes32, string _result) public {
@@ -29,7 +30,7 @@ contract ConversionRate is usingOraclize {
         return price;
     }
 
-    function updateConversionToSGD() external payable {
+    function updateConversionToSGD() public payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {

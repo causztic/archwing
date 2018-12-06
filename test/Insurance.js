@@ -72,8 +72,7 @@ contract('Insurance', async (accounts) => {
 
     await userInst.buyInsurance(validBooking, false, { value: 30E18 });
     let insurance = await userInst.getInsurance(validBooking);
-    console.log(insurance);
-    assert.strictEqual(insurance[0][0], validBookingAscii);
-    assert.strictEqual(insurance[1][0].toNumber(), 0);
+    assert.strictEqual(insurance[0], validBookingAscii);
+    assert.strictEqual(insurance[1].toNumber(), 0);
   });
 });
