@@ -17,7 +17,7 @@ contract FlightValidity is usingOraclize {
     }
 
     event LogNewOraclizeQuery(string description);
-    event LogCallback(bytes8 bookingNumber, uint256 processStatus, uint arrivalTime);
+    event LogCallback(bytes8 bookingNumber, uint256 processStatus, string arrivalTime);
 
     mapping (bytes32 => UserBooking) flightMappings;
     UserInfo ui;
@@ -77,7 +77,7 @@ contract FlightValidity is usingOraclize {
             (returnVal, tokens, numTokens) = JsmnSolLib.parse(result, 11);
             assert(returnVal == 0);
             JsmnSolLib.Token memory t = tokens[6];
-            uint arrivalTime = parseInt(JsmnSolLib.getBytes(result, t.start, t.end));
+            string memory arrivalTime = JsmnSolLib.getBytes(result, t.start, t.end);
 
             // ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
@@ -87,7 +87,7 @@ contract FlightValidity is usingOraclize {
             bytes8 bookingNum = flightMappings[queryId].bookingNum;
             address userAddr = flightMappings[queryId].userAddr;
             uint256 processStatus = 1;
-            if (block.timestamp < arrivalTime) {
+            if (block.timestamp < parseInt(arrivalTime)) {
                 processStatus = 2;
             }
             ui.updateTicket(bookingNum, processStatus, userAddr);

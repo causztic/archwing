@@ -31,49 +31,49 @@ contract('FlightValidity', () => {
     })
   })
 
-  it("should return with invalid process status if the ticket does not exist", async () => {
-    const flightInst = await FlightValidity.deployed();
-    const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails("AAAA0", { value: 1E18 });
-    assert.web3Event(response, {
-      event: 'LogNewOraclizeQuery',
-      args: {
-        description: 'Oraclize query was sent, standing by for the answer..'
-      }
-    });
+  // it("should return with invalid process status if the ticket does not exist", async () => {
+  //   const flightInst = await FlightValidity.deployed();
+  //   const userInst = await UserInfo.deployed();
+  //   let response = await flightInst.checkFlightDetails("AAAA0", { value: 1E18 });
+  //   assert.web3Event(response, {
+  //     event: 'LogNewOraclizeQuery',
+  //     args: {
+  //       description: 'Oraclize query was sent, standing by for the answer..'
+  //     }
+  //   });
 
-    const logResult = await promisifyLogWatch(
-      flightInst.LogCallback({ fromBlock: 'latest' }));
-    const eventWrapper = { 'logs': [logResult] }
-    assert.web3Event(eventWrapper, {
-      event: 'LogCallback',
-      args: {
-        bookingNumber: "0x4141414130000000",
-        processStatus: 1
-      }
-    })
-  })
+  //   const logResult = await promisifyLogWatch(
+  //     flightInst.LogCallback({ fromBlock: 'latest' }));
+  //   const eventWrapper = { 'logs': [logResult] }
+  //   assert.web3Event(eventWrapper, {
+  //     event: 'LogCallback',
+  //     args: {
+  //       bookingNumber: "0x4141414130000000",
+  //       processStatus: 1
+  //     }
+  //   })
+  // })
 
-  it("should return with invalid process status if the ticket has expired", async () => {
-    const flightInst = await FlightValidity.deployed();
-    const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails("AAAAA", { value: 1E18 });
-    assert.web3Event(response, {
-      event: 'LogNewOraclizeQuery',
-      args: {
-        description: 'Oraclize query was sent, standing by for the answer..'
-      }
-    });
+  // it("should return with invalid process status if the ticket has expired", async () => {
+  //   const flightInst = await FlightValidity.deployed();
+  //   const userInst = await UserInfo.deployed();
+  //   let response = await flightInst.checkFlightDetails("AAAAA", { value: 1E18 });
+  //   assert.web3Event(response, {
+  //     event: 'LogNewOraclizeQuery',
+  //     args: {
+  //       description: 'Oraclize query was sent, standing by for the answer..'
+  //     }
+  //   });
 
-    const logResult = await promisifyLogWatch(
-      flightInst.LogCallback({ fromBlock: 'latest' }));
-    const eventWrapper = { 'logs': [logResult] }
-    assert.web3Event(eventWrapper, {
-      event: 'LogCallback',
-      args: {
-        bookingNumber: "0x4141414141000000",
-        processStatus: 1
-      }
-    })
-  })
+  //   const logResult = await promisifyLogWatch(
+  //     flightInst.LogCallback({ fromBlock: 'latest' }));
+  //   const eventWrapper = { 'logs': [logResult] }
+  //   assert.web3Event(eventWrapper, {
+  //     event: 'LogCallback',
+  //     args: {
+  //       bookingNumber: "0x4141414141000000",
+  //       processStatus: 1
+  //     }
+  //   })
+  // })
 });
