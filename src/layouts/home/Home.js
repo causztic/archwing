@@ -12,7 +12,6 @@ import {
 import Coverage from "./_Coverage";
 
 import Ticket from "./_Ticket";
-import TicketViewer from './_TicketViewer';
 
 class Home extends Component {
   constructor(props, context) {
@@ -93,22 +92,7 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <div className="pure-u-3-5 hero">
-              <h2>Instant Coverage</h2>
-              <h3>
-                Get insured for single or round trips at affordable rates.
-              </h3>
-              {this.userLoading ? (
-                undefined
-              ) : this.userExists ? (
-                <Ticket contracts={this.props.contracts} />
-              ) : (
-                createAccountButton
-              )}
-            </div>
-            <div className="pure-u-2-5 hero">
-                <TicketViewer contracts={this.props.contracts} userExists={this.userExists} />
-            </div>
+            <Ticket contracts={this.props.contracts} userLoading={this.userLoading} userExists={this.userExists} createAccountButton={createAccountButton}/>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
