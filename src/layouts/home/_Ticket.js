@@ -61,8 +61,16 @@ class Ticket extends Component {
       return;
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-    console.log(bookingNum);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
+
+    let bookings = localStorage.getItem("archwing_bookings");
+    if (bookings === null) {
+      localStorage.setItem("archwing_bookings", [bookingNum]);
+    } else {
+      bookings.push(bookingNum);
+      localStorage.setItem("archwing_bookings", bookings);
+    }
+
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum);
     this.setState({ ticket1: null });
   }
 

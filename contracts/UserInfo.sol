@@ -49,9 +49,7 @@ contract UserInfo {
 
     function createUser() external {
         User storage user = users[msg.sender];
-        // Check that the user did not already exist:
         require(!user.set, "User already exists");
-        // Store the user
         users[msg.sender] = User({
             points: 0,
             set: true
@@ -64,23 +62,6 @@ contract UserInfo {
 
         return user.points;
     }
-
-    // TICKETS
-
-    // function getTickets() external view returns (bytes8[], uint256[]) {
-    //     User storage user = users[msg.sender];
-    //     require(user.set, "User does not exist");
-
-    //     bytes8[]  memory bookingNumbers  = new bytes8[](user.bookingNumbers.length);
-    //     uint256[]    memory processStatus = new uint256[](user.bookingNumbers.length);
-
-    //     for (uint i = 0; i < user.bookingNumbers.length; i++) {
-    //         bookingNumbers[i] = user.bookingNumbers[i];
-    //         Ticket storage ticket = user.tickets[bookingNumbers[i]];
-    //         processStatus[i] = ticket.processStatus;
-    //     }
-    //     return (bookingNumbers, processStatus);
-    // }
 
     // INSURANCES
 
@@ -113,12 +94,12 @@ contract UserInfo {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        uint8 _status; 
+        uint8 _status;
         uint8 processStatus;
         bool ticketSet;
         uint8 ticketType;
 
-        (processStatus, ticketType, _status, ticketSet) = fv.tickets(msg.sender, bookingNumber);
+        (processStatus, ticketType, _status, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
         require(ticketSet, "bookingNumber not found");
         require(processStatus == 2, "Invalid ticket status");
         require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
@@ -166,7 +147,7 @@ contract UserInfo {
             claimStatus: 0,
             set: true
         });
-        
+
         numInsurances += 1;
     }
 
@@ -179,9 +160,9 @@ contract UserInfo {
         uint8 _processStatus;
         uint8 _ticketType;
         bool _set;
-        uint8 status; 
+        uint8 status;
 
-        (_processStatus, _ticketType, status, _set) = fv.tickets(msg.sender, bookingNumber);
+        (_processStatus, _ticketType, status, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
         Coverage.Insurance storage insurance = user.insurances[bookingNumber];
         require(insurance.set, "Insurance not found.");
         // status = 0 is normal and cannot be claimed

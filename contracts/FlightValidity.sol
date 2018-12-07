@@ -16,7 +16,11 @@ contract FlightValidity is usingOraclize {
     event LogTicketStatus(bytes8 bookingNumber, uint256 processStatus, uint256 departureTime);
 
     mapping (bytes32 => UserBooking) private flightMappings;
-    mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public tickets;
+    // we will be able to see the links between the user and their respective bookings here,
+    // but it is not a security vulnerability but only a privacy issue. we could perform some hashing on the
+    // booking numbers instead of storing them as-is.
+    mapping (address => bytes8[]) private userBookings;
+    mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public ticketStatuses;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
@@ -57,9 +61,8 @@ contract FlightValidity is usingOraclize {
             }
         }
 
-        // ui.updateTicket(bookingNum, processStatus, userAddress);
-        tickets[userAddress][bookingNumber].processStatus = uint8(processStatus);
-        tickets[userAddress][bookingNumber].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber].processStatus = uint8(processStatus);
+        ticketStatuses[userAddress][bookingNumber].flightStatus = uint8(status);
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
@@ -82,13 +85,15 @@ contract FlightValidity is usingOraclize {
                     ").ticket"
                 )
             );
-            if (!tickets[msg.sender][bookingNumber].set) {
-                tickets[msg.sender][bookingNumber] = Coverage.TicketStatus({
+            if (!ticketStatuses[msg.sender][bookingNumber].set) {
+                ticketStatuses[msg.sender][bookingNumber] = Coverage.TicketStatus({
                     processStatus: 0,
                     ticketType: 0,
                     flightStatus: 0,
                     set: true
                 });
+                // need a way to prevent too many booking numbers to be added.
+                userBookings[msg.sender].push(bookingNumber);
             }
 
             flightMappings[queryId] = UserBooking({
@@ -98,9 +103,13 @@ contract FlightValidity is usingOraclize {
             });
         }
     }
-    
+
+    function getBookingNumbers() external view returns (bytes8[]) {
+        return userBookings[msg.sender];
+    }
+
     // UTILS
-    
+
     function strCompare(string _a, string _b) internal pure returns (int) {
         bytes memory a = bytes(_a);
         bytes memory b = bytes(_b);
