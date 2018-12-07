@@ -82,4 +82,4 @@ npm run build
 ```
 
 # Notable Changes
-07/12/18 - Refactoring to decrease gas used by `FlightValidity.checkFlightDetails` by 130k.
+07/12/18 - Refactoring to decrease gas used on `FlightValidity.checkFlightDetails` by 130k.

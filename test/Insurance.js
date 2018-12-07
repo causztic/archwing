@@ -17,7 +17,7 @@ contract('Insurance', async (accounts) => {
     const invalidBooking = "AAAAA";
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails(invalidBooking, `?booking_number=${invalidBooking}`);
+    let response = await flightInst.checkFlightDetails(invalidBooking, false, { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -51,7 +51,7 @@ contract('Insurance', async (accounts) => {
     const validBookingAscii = "0x4141414147000000";
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
-    let response = await flightInst.checkFlightDetails(validBooking, `?booking_number=${validBooking}`, { value: 1E18});
+    let response = await flightInst.checkFlightDetails(validBooking, false, { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {

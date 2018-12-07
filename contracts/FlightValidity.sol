@@ -17,7 +17,7 @@ contract FlightValidity is usingOraclize {
 
     mapping (bytes32 => UserBooking) private flightMappings;
     // we will be able to see the links between the user and their respective bookings here,
-    // but it is not a security vulnerability but only a privacy issue. we could perform some hashing on the
+    // but it is not a security vulnerability but a privacy issue. we could perform some hashing on the
     // booking numbers instead of storing them as-is.
     mapping (address => bytes8[]) private userBookings;
     mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public ticketStatuses;
@@ -69,26 +69,38 @@ contract FlightValidity is usingOraclize {
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, bool returnTripBool) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
         } else {
+            string memory returnTripStr;
+            uint8 returnTrip;
+            if (returnTripBool) {
+                returnTripStr = "1";
+                returnTrip = 1;
+            } else {
+                returnTripStr = "0";
+                returnTrip = 0;
+            }
+
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
             bytes32 queryId = oraclize_query(
                 "URL",
                 strConcat(
                     "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
                     bytes8ToString(bookingNumber),
+                    "&return=",
+                    returnTripStr,
                     ").ticket"
                 )
             );
             if (!ticketStatuses[msg.sender][bookingNumber].set) {
                 ticketStatuses[msg.sender][bookingNumber] = Coverage.TicketStatus({
                     processStatus: 0,
-                    ticketType: 0,
+                    ticketType: returnTrip,
                     flightStatus: 0,
                     set: true
                 });

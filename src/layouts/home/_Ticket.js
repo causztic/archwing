@@ -104,7 +104,7 @@ class Ticket extends Component {
       localStorage.setItem("archwing_bookings", JSON.stringify(this.state.bookings));
     }
 
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
     this.setState({ ticket1: null });
   }
 
