@@ -20,7 +20,7 @@ contract ConversionRate is usingOraclize {
 
         // this code will break if 1 ether ever drops below $100 or rises above $1000.
         // however, we get to save some gas!
-        price = parseInt(_result, 3);
+        price = parseInt(_result, 2);
         lastUpdated = block.timestamp;
 
         emit LogCallback(_result, lastUpdated);

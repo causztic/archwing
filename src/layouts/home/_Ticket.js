@@ -21,7 +21,8 @@ class Ticket extends Component {
       ticket1: null,
       ticket2: null,
       bookings: [],
-      syncing: false,
+      syncBookings: true,
+      syncPrice: true,
       conversionRate: null
     }
   }
@@ -29,11 +30,27 @@ class Ticket extends Component {
   componentDidMount() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
     this.pollConversionRate().then((conversionRate) => {
-      this.setState({ conversionRate });
+      console.log(conversionRate);
+      this.setState({ conversionRate, syncPrice: false });
     });
     this.pollBookingNumbers().then((bookings) => {
-      this.setState({ bookings });
+      this.setState({ bookings, syncBookings: false });
     })
+  }
+  async pollBookingStatus(bookingNumber) {
+    const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(this.props.accounts[0], bookingNumber);
+    let i = 0;
+    while (i < 20) {
+      if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
+        let processStatus = this.props.contracts.FlightValidity.ticketStatuses[
+          statusDataKey
+        ].value.processStatus;
+        return { bookingNumber, processStatus };
+      }
+      i++;
+      await delay(500);
+    }
+    return { bookingNumber, processStatus: 0 };
   }
 
   async pollBookingNumbers() {
@@ -41,9 +58,11 @@ class Ticket extends Component {
     let i = 0;
     while (i < 20) {
       if (bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
-        return this.props.contracts.FlightValidity.getBookingNumbers[
+        let bookingNumbers = this.props.contracts.FlightValidity.getBookingNumbers[
           bookingDataKey
         ].value;
+        const statuses = bookingNumbers.map(this.pollBookingStatus, this);
+        return await Promise.all(statuses);
       }
       i++;
       await delay(500);
@@ -66,18 +85,27 @@ class Ticket extends Component {
     return 20000;
   }
 
+  async updatePrice() {
+    this.setState({ syncPrice: true });
+    let conversionRate = await this.pollConversionRate();
+    await delay(1000);
+    this.setState({ syncPrice: false });
+    console.log(conversionRate);
+    this.setState({ conversionRate });
+  }
+
   async updateTickets() {
-    this.setState({ syncing: true });
+    this.setState({ syncBookings: true });
     let tickets = await this.pollBookingNumbers();
-    this.setState({ syncing: false });
+    await delay(1000);
+    this.setState({ syncBookings: false });
     console.log(tickets);
     this.setState({ bookings: tickets});
   }
 
-  async insureFor(bookingNumber) {
+  async insureFor(booking) {
     // single trip ticket purchase
-    let rate = await this.pollConversionRate();
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(bookingNumber, false, { value: SINGLE_TRIP_PRICE / rate });
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, false, { value: SINGLE_TRIP_PRICE / this.state.conversionRate });
   }
 
   handleFileChosen = (event) => {
@@ -123,31 +151,34 @@ class Ticket extends Component {
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
     this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
-    this.updateTickets();
     this.setState({ ticket1: null });
   }
 
-  updateTicketsWithGen = () => {
-    this.updateTickets();
+  getBookingStatus = (processStatus) => {
+    const processToLabel = ["pending", "invalid", "valid"];
+    return processToLabel[processStatus];
   }
 
   render() {
     let ticketViewer = [];
-    if (this.props.userExists && Array.isArray(this.state.bookings) && this.state.bookings.length) {
-      for (let bookingNumber of this.state.bookings) {
+    if (this.state.syncBookings) {
+      ticketViewer = <b>Loading..</b>;
+    } else if (this.props.userExists && Array.isArray(this.state.bookings) && this.state.bookings.length) {
+      for (let booking of this.state.bookings) {
+        let status = this.getBookingStatus(booking.processStatus);
         ticketViewer.push(
-          <div className="pending-ticket" key={bookingNumber}>
+          <div className="pending-ticket" key={booking.bookingNumber}>
             <div className="booking-number">
-              {Web3.utils.toAscii(bookingNumber)}
+              {Web3.utils.toAscii(booking.bookingNumber)}
             </div>
-            <button className="pure-button process-status valid" onClick={() => this.insureFor(bookingNumber)}>Get Insured</button>
-            {/* <div className={`process-status ${statusClass}`}>
-              {statusClass.toUpperCase()}
-            </div> */}
+            <div className={`process-status ${status}`}>
+              {status.toUpperCase()}
+            </div>
+            { status === "valid" ? <button className="pure-button process-status valid" onClick={() => this.insureFor(booking)}>Get Insured</button> : null }
           </div>
         );
       }
-    }else {
+    } else {
       ticketViewer = <b>You have not uploaded any tickets yet.</b>;
     }
     return (
@@ -161,10 +192,17 @@ class Ticket extends Component {
             this.props.createAccountButton
           ) :
             (<>
-              <h4>Current Rates: </h4>
-              <b>Single Trip: 20SGD / { SINGLE_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
-              <br/>
-              <b>Round Trip:  30SGD / { ROUND_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+              <h4 className="with-icon">Current Rates: </h4>
+              <div className="sync-icon" onClick={() => this.updatePrice()}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncPrice}/></div>
+              { this.state.syncPrice ? <b>Updating Price..</b> :
+                <>
+                  <br/>
+                  <b>Single Trip: 20SGD or { SINGLE_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+                  <br/>
+                  <b>Round Trip:  30SGD or { ROUND_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+                  <br/>
+                </>
+              }
               <pre>Upload your Ticket PDF</pre>
               <input type="file" onChange={this.handleFileChosen} />
               <button className="pure-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
@@ -175,7 +213,7 @@ class Ticket extends Component {
         <div className="pure-u-2-5 hero">
           <h3 className="with-icon">Your Tickets</h3>
           { !this.props.userLoading && this.props.userExists ?
-          <div className="sync-icon" onClick={this.updateTicketsWithGen}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncing}/></div>
+          <div className="sync-icon" onClick={() => this.updateTickets()}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncBookings}/></div>
           : undefined
           }
           <div className="tickets">{ticketViewer}</div>

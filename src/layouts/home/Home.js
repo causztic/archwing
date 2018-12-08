@@ -92,7 +92,7 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <Ticket contracts={this.props.contracts} userLoading={this.userLoading} userExists={this.userExists} createAccountButton={createAccountButton}/>
+            <Ticket accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.userLoading} userExists={this.userExists} createAccountButton={createAccountButton}/>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
