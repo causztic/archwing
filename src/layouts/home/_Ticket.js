@@ -42,10 +42,10 @@ class Ticket extends Component {
     let i = 0;
     while (i < 20) {
       if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
-        let processStatus = this.props.contracts.FlightValidity.ticketStatuses[
+        let { processStatus, ticketType } = this.props.contracts.FlightValidity.ticketStatuses[
           statusDataKey
-        ].value.processStatus;
-        return { bookingNumber, processStatus };
+        ].value;
+        return { bookingNumber, processStatus, ticketType };
       }
       i++;
       await delay(500);
@@ -108,9 +108,10 @@ class Ticket extends Component {
   }
 
   async insureFor(booking, loyaltyPoints) {
-    // single trip ticket purchase
-    // we apad the exchange rate to take care of any last minute conversion rate changes.
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, loyaltyPoints, { value: SINGLE_TRIP_PRICE / (this.state.conversionRate - 1000) });
+    // we pad the exchange rate to take care of any last minute conversion rate changes.
+    const price = booking.ticketType === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber, loyaltyPoints, { value: price / (this.state.conversionRate - 1000) });
+    this.props.updatePoints();
   }
 
   handleFileChosen = (event) => {
@@ -170,8 +171,11 @@ class Ticket extends Component {
       ticketViewer = <b>Loading..</b>;
     } else if (this.props.userExists && Array.isArray(this.state.bookings) && this.state.bookings.length) {
       for (let booking of this.state.bookings) {
+        const pointReq = booking.ticketType === 0 ? 100 : 150;
         let status = this.getBookingStatus(booking.processStatus);
         let statusLogo = <FontAwesomeIcon icon={faSyncAlt} color="gray" />;
+        let pointsStatus = this.props.points >= pointReq ? "valid" : "pending";
+
         if (status === "invalid") {
           statusLogo = <FontAwesomeIcon icon={faCross} color="red" />;
         } else if (status === "valid") {
@@ -186,8 +190,8 @@ class Ticket extends Component {
             </div>
             { status === "valid" ?
               <>
-                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber, false)}>Get Insured</button>
-                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber, true)}>Use AWPoints</button>
+                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking, false)}>Get Insured</button>
+                <button className={`pure-button process-status ${pointsStatus}}`} disabled={pointsStatus === "pending"} onClick={() => this.insureFor(booking.bookingNumber, true)}>Use AWPoints</button>
               </> : null
             }
           </div>
