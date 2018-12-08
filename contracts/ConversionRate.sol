@@ -11,7 +11,6 @@ contract ConversionRate is usingOraclize {
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
-        updateConversionToSGD();
     }
 
     function __callback(bytes32, string _result) public {

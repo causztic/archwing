@@ -6,5 +6,5 @@ const FlightValidity = artifacts.require("FlightValidity");
 module.exports = function(deployer, network, accounts) {
   deployer.deploy(Coverage);
   deployer.deploy(FlightValidity);
-  deployer.deploy(ConversionRate);
+  deployer.deploy(ConversionRate).then((cr) => cr.updateConversionToSGD())
 };

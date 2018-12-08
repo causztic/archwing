@@ -95,7 +95,8 @@ class Coverage extends Component {
     })
     this.pollCoverages().then(data => {
       let coverages = {};
-      data.coverages
+      if (data.coverages) {
+        data.coverages
         .filter(coverage => coverage.claimStatus !== -1)
         .forEach(coverage => {
           let flightStatus = data.bookings.find(
@@ -106,6 +107,7 @@ class Coverage extends Component {
             flightStatus
           };
         });
+      }
       this.setState({
         coverages
       });
@@ -114,10 +116,18 @@ class Coverage extends Component {
     this.setState({ syncCoverages: false });
   };
 
+  claimInsurance = (bookingNumber) => {
+    this.contracts.UserInfo.methods.claimInsurance.cacheSend(bookingNumber);
+  }
+
+  claimPayouts = () => {
+    this.contracts.UserInfo.methods.claimPayouts.cacheSend();
+  }
+
   render() {
     let coverageItem = <p>Loading contracts..</p>;
     if (!this.state.syncCoverages) {
-      if (this.state.coverages.length !== 0) {
+      if (Object.keys(this.state.coverages).length !== 0) {
         let coverageRows = [];
         for (let [
           bookingNumber,
@@ -134,7 +144,7 @@ class Coverage extends Component {
             }
           }
           let claimButton = (
-            <button className="pure-button" disabled={payoutStatus}>
+            <button className="pure-button" onClick={() => this.claimInsurance(bookingNumber)} disabled={payoutStatus}>
               Claim Payout
             </button>
           );
@@ -153,16 +163,20 @@ class Coverage extends Component {
           );
         }
         coverageItem = (
-          <table className="pure-table">
-            <thead>
-              <tr>
-                <th>Booking Reference</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>{coverageRows}</tbody>
-          </table>
+          <>
+            <table className="pure-table">
+              <thead>
+                <tr>
+                  <th>Booking Reference</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>{coverageRows}</tbody>
+            </table>
+            <br/>
+            <button className="pure-button valid pure-u-1-1" onClick={this.claimPayouts}>Withdraw Payouts</button>
+          </>
         );
       } else {
         coverageItem = <p>You currently have no coverage plans with us.</p>;
@@ -183,6 +197,7 @@ class Coverage extends Component {
         ) : (
           undefined
         )}
+        <br/>
         {this.props.userLoading
           ? undefined
           : this.props.userExists
