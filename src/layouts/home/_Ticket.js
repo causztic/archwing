@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import { delay } from 'redux-saga';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSync
+  faSync, faSyncAlt, faCross, faCheck
 } from "@fortawesome/free-solid-svg-icons";
 
 import { parseTicketPDF } from '../../util/ticket';
@@ -61,8 +61,12 @@ class Ticket extends Component {
         let bookingNumbers = this.props.contracts.FlightValidity.getBookingNumbers[
           bookingDataKey
         ].value;
-        const statuses = bookingNumbers.map(this.pollBookingStatus, this);
-        return await Promise.all(statuses);
+        if (bookingNumbers) {
+          const statuses = bookingNumbers.map(this.pollBookingStatus, this);
+          return await Promise.all(statuses);
+        } else {
+          return [];
+        }
       }
       i++;
       await delay(500);
@@ -105,7 +109,8 @@ class Ticket extends Component {
 
   async insureFor(booking) {
     // single trip ticket purchase
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, false, { value: SINGLE_TRIP_PRICE / this.state.conversionRate });
+    // we apad the exchange rate to take care of any last minute conversion rate changes.
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, false, { value: SINGLE_TRIP_PRICE / (this.state.conversionRate - 1000) });
   }
 
   handleFileChosen = (event) => {
@@ -150,7 +155,7 @@ class Ticket extends Component {
       return;
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false, { value: 200000 });
     this.setState({ ticket1: null });
   }
 
@@ -166,15 +171,20 @@ class Ticket extends Component {
     } else if (this.props.userExists && Array.isArray(this.state.bookings) && this.state.bookings.length) {
       for (let booking of this.state.bookings) {
         let status = this.getBookingStatus(booking.processStatus);
+        let statusLogo = <FontAwesomeIcon icon={faSyncAlt} color="gray" />;
+        if (status === "invalid") {
+          statusLogo = <FontAwesomeIcon icon={faCross} color="red" />;
+        } else if (status === "valid") {
+          statusLogo = <FontAwesomeIcon icon={faCheck} color="green" />;
+        }
+
         ticketViewer.push(
           <div className="pending-ticket" key={booking.bookingNumber}>
             <div className="booking-number">
+              {statusLogo}
               {Web3.utils.toAscii(booking.bookingNumber)}
             </div>
-            <div className={`process-status ${status}`}>
-              {status.toUpperCase()}
-            </div>
-            { status === "valid" ? <button className="pure-button process-status valid" onClick={() => this.insureFor(booking)}>Get Insured</button> : null }
+            { status === "valid" ? <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber)}>Get Insured</button> : null }
           </div>
         );
       }

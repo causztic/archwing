@@ -75,6 +75,7 @@ contract FlightValidity is usingOraclize {
         // using booking number only for convenience
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
+            revert("Oraclize query not sent, not enough ETH");
         } else {
             string memory returnTripStr;
             uint8 returnTrip;

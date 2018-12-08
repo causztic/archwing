@@ -137,20 +137,23 @@ ul
   display: flex
   justify-content: center
   align-items: center
+  margin-bottom: 5px
   .booking-number
     font-weight: bold
+    text-align: left
+    width: 50%
   .process-status
     margin-left: 1em
     padding: 5px
-    &.valid
-      background-color: greenyellow
-      color: $steel
-    &.invalid
-      background-color: red
-      color: $white
-    &.pending
-      background-color: $denim
-      color: $white
+  .valid
+    background-color: rgb(28, 184, 65)
+    color: $white
+  .invalid
+    background-color: rgb(202, 60, 60)
+    color: $white
+  .pending
+    background-color: $denim
+    color: $white
 
 #instant-coverage
   p
