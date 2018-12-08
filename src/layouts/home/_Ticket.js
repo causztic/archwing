@@ -3,7 +3,6 @@ import pdfjsLib from 'pdfjs-dist';
 import Web3 from 'web3';
 import PropTypes from "prop-types";
 import { delay } from 'redux-saga';
-import { call } from 'redux-saga/effects';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSync
@@ -21,36 +20,35 @@ class Ticket extends Component {
       bookings: JSON.parse(localStorage.getItem("archwing_bookings")),
       syncing: false,
     }
+    this.bookingDataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
   }
 
   componentDidMount() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
   }
 
-  *pollContract() {
-    console.log("here");
-    let dataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
+  async pollContract() {
     let i = 0;
     while (i < 20) {
-      if (dataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
+      if (this.bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
+        console.log(this.props.contracts.FlightValidity);
         return this.props.contracts.FlightValidity.getBookingNumbers[
-          dataKey
+          this.bookingDataKey
         ].value;
       }
       i++;
-      yield delay(500);
+      await delay(500);
     }
     return [];
   }
 
-  *updateTickets() {
+  async updateTickets() {
     this.setState({ syncing: true });
-    let obj = yield call(this.pollContract);
+    let tickets = await this.pollContract();
     this.setState({ syncing: false });
-    if (obj.value.length > 0) {
-      localStorage.setItem("archwing_bookings", JSON.stringify(obj.value));
-      this.setState({ bookings: obj.value});
-    }
+    console.log(tickets);
+    localStorage.setItem("archwing_bookings", JSON.stringify(tickets));
+    this.setState({ bookings: tickets});
   }
 
   handleFileChosen = (event) => {
@@ -95,21 +93,13 @@ class Ticket extends Component {
       return;
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-
-    if (this.state.bookings === null) {
-      this.setState({ bookings: [bookingNum] });
-      localStorage.setItem("archwing_bookings", JSON.stringify([bookingNum]));
-    } else {
-      this.setState({ bookings: [...this.state.bookings, bookingNum] });
-      localStorage.setItem("archwing_bookings", JSON.stringify(this.state.bookings));
-    }
-
     this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false);
+    this.updateTickets();
     this.setState({ ticket1: null });
   }
 
   updateTicketsWithGen = () => {
-    this.updateTickets().next();
+    this.updateTickets();
   }
 
   render() {
@@ -151,7 +141,10 @@ class Ticket extends Component {
         </div>
         <div className="pure-u-2-5 hero">
           <h3 className="with-icon">Your Tickets</h3>
-          <div className="sync-icon" onClick={this.updateTicketsWithGen}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncing} /></div>
+          { !this.props.userLoading && this.props.userExists ?
+          <div className="sync-icon" onClick={this.updateTicketsWithGen}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncing}/></div>
+          : undefined
+          }
           <div className="tickets">{ticketViewer}</div>
         </div>
       </>
