@@ -21,17 +21,17 @@ class Ticket extends Component {
       syncing: false,
     }
     this.bookingDataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
+    this.conversionDataKey = this.contracts.ConversionRate.methods.getConversionToSGD.cacheCall();
   }
 
   componentDidMount() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
   }
 
-  async pollContract() {
+  async pollBookingNumbers() {
     let i = 0;
     while (i < 20) {
       if (this.bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
-        console.log(this.props.contracts.FlightValidity);
         return this.props.contracts.FlightValidity.getBookingNumbers[
           this.bookingDataKey
         ].value;
@@ -42,13 +42,33 @@ class Ticket extends Component {
     return [];
   }
 
+  async pollConversionRate() {
+    let i = 0;
+    while (i < 20) {
+      if (this.conversionDataKey in this.props.contracts.ConversionRate.getConversionToSGD) {
+        return this.props.contracts.ConversionRate.getConversionToSGD[
+          this.conversionDataKey
+        ].value;
+      }
+      i++;
+      await delay(500);
+    }
+    return 20000;
+  }
+
   async updateTickets() {
     this.setState({ syncing: true });
-    let tickets = await this.pollContract();
+    let tickets = await this.pollBookingNumbers();
     this.setState({ syncing: false });
     console.log(tickets);
     localStorage.setItem("archwing_bookings", JSON.stringify(tickets));
     this.setState({ bookings: tickets});
+  }
+
+  async insureFor(bookingNumber) {
+    // single trip ticket purchase
+    let rate = await this.pollConversionRate();
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(bookingNumber, false, { value: 20E18 / rate });
   }
 
   handleFileChosen = (event) => {
@@ -111,6 +131,7 @@ class Ticket extends Component {
             <div className="booking-number">
               {Web3.utils.toAscii(bookingNumber)}
             </div>
+            <button className="pure-button process-status valid" onClick={() => this.insureFor(bookingNumber)}>Get Insured</button>
             {/* <div className={`process-status ${statusClass}`}>
               {statusClass.toUpperCase()}
             </div> */}

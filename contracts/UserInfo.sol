@@ -7,8 +7,8 @@ import { ConversionRate } from "./ConversionRate.sol";
 contract UserInfo {
     // price in SGD, multiplied by the nomination of wei
     // this way we can do division without floating points as accurately as possible
-    uint256 constant ROUNDTRIP_PRICE_SGD = 30e18;
-    uint256 constant SINGLETRIP_PRICE_SGD = 20e18;
+    uint256 constant ROUNDTRIP_PRICE_SGD = 3000e18;
+    uint256 constant SINGLETRIP_PRICE_SGD = 2000e18;
     // price in loyalty points
     uint256 constant ROUNDTRIP_PRICE_POINTS = 150;
     uint256 constant SINGLETRIP_PRICE_POINTS = 100;
@@ -16,8 +16,8 @@ contract UserInfo {
     uint256 constant ROUNDTRIP_REWARD_POINTS = 30;
     uint256 constant SINGLETRIP_REWARD_POINTS = 10;
     // payout for insurance
-    uint256 constant DELAYED_PAYOUT = 200e18;
-    uint256 constant CANCELLED_PAYOUT = 5000e18;
+    uint256 constant DELAYED_PAYOUT = 20000e18;
+    uint256 constant CANCELLED_PAYOUT = 500000e18;
 
     struct User {
         mapping(bytes8 => Coverage.Insurance) insurances;
@@ -104,7 +104,7 @@ contract UserInfo {
         require(processStatus == 2, "Invalid ticket status");
         require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
 
-        // Ideally we should poll for the updated exchange rate here
+        // It is the user's responsibility to call the contract to update the conversion before buying the insurance.
         uint256 rate = cr.getConversionToSGD();
         assert(rate > 0);
         // Ensure that the company has enough to pay for all cancelled tickets
@@ -129,9 +129,9 @@ contract UserInfo {
             }
 
             // e.g. price is 15000 for $150 per ether
-            // If $30, $30/$150 would be 0.2 ether. to avoid floating points,
-            // we do 30*(1e18-1e15)/150 = 200 finney == 0.2 ether
-            // With this reasoning, we can do 30e18/150 to obtain the same value in wei
+            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000.
+            // we do 3000*(1e18-1e15)/15000 = 200 finney == 0.2 ether
+            // With this reasoning, we can do 3000e18/15000 to obtain the same value in wei
             price = price / rate;
             require(msg.value >= price, "Not enough money!");
 

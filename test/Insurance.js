@@ -6,17 +6,18 @@ const FlightValidity = artifacts.require('FlightValidity');
 const UserInfo = artifacts.require('UserInfo');
 
 contract('Insurance', async (accounts) => {
-  it('should get a list of insurances', async () => {
-    let instance = await UserInfo.deployed();
-    await instance.createUser();
-    let insurances = await instance.getInsurances();
-    assert.lengthOf(insurances, 2, 'insurances will return booking number and claim status');
-  });
+  // it('should get a list of insurances', async () => {
+  //   let instance = await UserInfo.deployed();
+  //   await instance.createUser();
+  //   let insurances = await instance.getInsurances();
+  //   assert.lengthOf(insurances, 2, 'insurances will return booking number and claim status');
+  // });
 
   it('should not allow buying of insurances for invalid tickets', async () => {
     const invalidBooking = "AAAAA";
     const flightInst = await FlightValidity.deployed();
     const userInst = await UserInfo.deployed();
+    await userInst.createUser();
     let response = await flightInst.checkFlightDetails(invalidBooking, false, { value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
@@ -26,13 +27,14 @@ contract('Insurance', async (accounts) => {
     });
 
     const logResult = await promisifyLogWatch(
-      userInst.LogNewTicket({ fromBlock: 'latest' }));
+      flightInst.LogTicketStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogNewTicket',
+      event: 'LogTicketStatus',
       args: {
         bookingNumber: "0x4141414141000000", // ascii of AAAAA
-        processStatus: 1 // invalid
+        processStatus: 1, // invalid
+        departureTime: 1542868560
       }
     })
 
@@ -60,17 +62,18 @@ contract('Insurance', async (accounts) => {
     });
 
     const logResult = await promisifyLogWatch(
-      userInst.LogNewTicket({ fromBlock: 'latest' }));
+      flightInst.LogTicketStatus({ fromBlock: 'latest' }));
     const eventWrapper = { 'logs': [logResult] }
     assert.web3Event(eventWrapper, {
-      event: 'LogNewTicket',
+      event: 'LogTicketStatus',
       args: {
         bookingNumber: validBookingAscii,
-        processStatus: 2 // valid
+        processStatus: 2, // valid
+        departureTime: 1546407780
       }
     })
 
-    await userInst.buyInsurance(validBooking, false, { value: 30E18 });
+    await userInst.buyInsurance(validBooking, false, { value: 1E18 });
     let insurance = await userInst.getInsurance(validBooking);
     assert.strictEqual(insurance[0], validBookingAscii);
     assert.strictEqual(insurance[1].toNumber(), 0);
@@ -82,7 +85,6 @@ contract('Insurance', async (accounts) => {
 
   it('should not allow claiming of insurances for tickets that have normal status', async () => {
     const validBooking = "AAAAG";
-    const validBookingAscii = "0x4141414147000000";
     const userInst = await UserInfo.deployed();
 
     let err = null;
