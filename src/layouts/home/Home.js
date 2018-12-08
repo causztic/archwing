@@ -142,7 +142,6 @@ class Home extends Component {
                 : this.state.userExists
                 ? undefined
                 : createAccountDiv()}
-              {this.state.creatingAcc ? "Hello" : undefined}
             </div>
             <a href="#instant-coverage">
               <div className="bouncing-arrow">
