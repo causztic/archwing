@@ -75,21 +75,6 @@ contract UserInfo {
         return (bookingNumber, insurance.claimStatus);
     }
 
-    // function getInsurances() external view returns (bytes8[], uint256[]) {
-    //     User storage user = users[msg.sender];
-    //     require(user.set, "User is not set");
-
-    //     bytes8[] memory bookingNumbers  = new bytes8[](user.bookingNumbers.length);
-    //     uint256[] memory claimStatus = new uint256[](user.bookingNumbers.length);
-
-    //     for (uint i = 0; i < user.bookingNumbers.length; i++) {
-    //         Coverage.Insurance storage insurance = user.insurances[user.bookingNumbers[i]];
-    //         bookingNumbers[i] = user.bookingNumbers[i];
-    //         claimStatus[i] = insurance.claimStatus;
-    //     }
-    //     return (bookingNumbers, claimStatus);
-    // }
-
     function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) external payable {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");

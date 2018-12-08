@@ -1,46 +1,194 @@
 import React, { Component } from "react";
+import Web3 from "web3";
+import { BigNumber } from "bignumber.js";
+import { delay } from "redux-saga";
 import PropTypes from "prop-types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 class Coverage extends Component {
   constructor(props, context) {
     super(props);
     this.contracts = context.drizzle.contracts;
-    // this.coverageDataKey = this.contracts.UserInfo.methods.getInsurances.cacheCall();
-    // this.coverageLoading = true;
-    // this.coverages = [[], []];
+    this.state = {
+      coverages: {},
+      syncCoverages: true
+    };
   }
 
-  getCoverage = () => {
-    // if (this.coverageDataKey in this.props.contracts.UserInfo.getInsurances) {
-    //   this.coverages = this.props.contracts.UserInfo.getInsurances[this.coverageDataKey].value;
-    //   this.coverageLoading = false;
-    // }
+  componentDidMount() {
+    this.updateCoverages();
   }
+
+  async pollCoverageStatus(bookingNumber) {
+    const statusDataKey = this.contracts.UserInfo.methods.getInsurance.cacheCall(
+      bookingNumber
+    );
+    let i = 0;
+    while (i < 20) {
+      if (statusDataKey in this.props.contracts.UserInfo.getInsurance) {
+        let result = this.props.contracts.UserInfo.getInsurance[statusDataKey];
+        let claimStatus = -1;
+        if (result.value) {
+          claimStatus = BigNumber(result.value[1]).toNumber();
+        }
+        return { bookingNumber, claimStatus };
+      }
+      i++;
+      await delay(500);
+    }
+    return { bookingNumber, claimStatus: 0 };
+  }
+
+  async pollFlightStatus(bookingNumber) {
+    const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(
+      this.props.accounts[0],
+      bookingNumber
+    );
+    let i = 0;
+    while (i < 20) {
+      if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
+        let {
+          flightStatus
+        } = this.props.contracts.FlightValidity.ticketStatuses[
+          statusDataKey
+        ].value;
+        flightStatus = BigNumber(flightStatus).toNumber();
+        return { bookingNumber, flightStatus };
+      }
+      i++;
+      await delay(500);
+    }
+    return { bookingNumber, flightStatus: 0 };
+  }
+
+  // similar to ticket, but we are getting the flight statuses.
+  // user is responsible to update the flight statuses themselves before claiming.
+  async pollCoverages() {
+    const bookingDataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
+    let i = 0;
+    while (i < 20) {
+      if (
+        bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers
+      ) {
+        let bookingNumbers = this.props.contracts.FlightValidity
+          .getBookingNumbers[bookingDataKey].value;
+        if (bookingNumbers) {
+          const statuses = bookingNumbers.map(this.pollFlightStatus, this);
+          const coverageMap = bookingNumbers.map(this.pollCoverageStatus, this);
+          let bookings = await Promise.all(statuses);
+          let coverages = await Promise.all(coverageMap);
+          return { bookings, coverages };
+        } else {
+          return [];
+        }
+      }
+      i++;
+      await delay(500);
+    }
+    return [];
+  }
+
+  async updateCoverages() {
+    this.setState({
+      syncCoverages: true
+    })
+    this.pollCoverages().then(data => {
+      let coverages = {};
+      data.coverages
+        .filter(coverage => coverage.claimStatus !== -1)
+        .forEach(coverage => {
+          let flightStatus = data.bookings.find(
+            booking => booking.bookingNumber === coverage.bookingNumber
+          ).flightStatus;
+          coverages[coverage.bookingNumber] = {
+            claimStatus: coverage.claimStatus,
+            flightStatus
+          };
+        });
+      this.setState({
+        coverages
+      });
+    });
+    await delay(1000);
+    this.setState({ syncCoverages: false });
+  };
 
   render() {
-    this.getCoverage();
-    let coverage = <p>Loading contracts..</p>;
-    // if (!this.coverageLoading) {
-    //   if (this.coverages[0].length !== 0) {
-    //     let coverageRows;
-    //     for (let i = 0; i < this.coverages[0].length; i++) {
-    //       coverageRows += <tr><td>{this.coverages[0][i]}</td><td>{this.coverages[1][i]}</td></tr>
-    //     }
-    //     coverage = (<table>
-    //       <th>
-    //         Booking Reference
-    //       </th>
-    //       <th>
-    //         Status
-    //       </th>
-    //       {coverageRows}
-    //     </table>);
-    //   } else {
-        coverage = (<p>You currently have no coverage plans with us.</p>);
-    //   }
-    // }
+    let coverageItem = <p>Loading contracts..</p>;
+    if (!this.state.syncCoverages) {
+      if (this.state.coverages.length !== 0) {
+        let coverageRows = [];
+        for (let [
+          bookingNumber,
+          { claimStatus, flightStatus }
+        ] of Object.entries(this.state.coverages)) {
+          let payoutStatus = true;
+          if (claimStatus < 2) {
+            if (flightStatus === 2) {
+              // cancelled and either claimed for delayed or unclaimed
+              payoutStatus = false;
+            } else if (flightStatus === 1 && claimStatus === 0) {
+              // delayed and unclaimed
+              payoutStatus = false;
+            }
+          }
+          let claimButton = (
+            <button className="pure-button" disabled={payoutStatus}>
+              Claim Payout
+            </button>
+          );
+          let flightStatusText = "ON SCHEDULE";
+          if (flightStatus === 1) {
+            flightStatusText = "DELAYED";
+          } else if (flightStatus === 2) {
+            flightStatusText = "CANCELLED";
+          }
+          coverageRows.push(
+            <tr key={bookingNumber}>
+              <td>{Web3.utils.toAscii(bookingNumber)}</td>
+              <td>{flightStatusText}</td>
+              <td>{claimButton}</td>
+            </tr>
+          );
+        }
+        coverageItem = (
+          <table className="pure-table">
+            <thead>
+              <tr>
+                <th>Booking Reference</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>{coverageRows}</tbody>
+          </table>
+        );
+      } else {
+        coverageItem = <p>You currently have no coverage plans with us.</p>;
+      }
+    }
     return (
-      coverage
+      <>
+        <h2 className="header">Claim Payouts</h2>
+        <h3 className="with-icon">Near-instant, fuss-free payouts.</h3>
+        {!this.props.userLoading && this.props.userExists ? (
+          <div className="sync-icon" onClick={() => this.updateCoverages()}>
+            <FontAwesomeIcon
+              icon={faSync}
+              size="lg"
+              spin={this.state.syncCoverages}
+            />
+          </div>
+        ) : (
+          undefined
+        )}
+        {this.props.userLoading
+          ? undefined
+          : this.props.userExists
+          ? coverageItem
+          : this.props.createAccountButton}
+      </>
     );
   }
 }

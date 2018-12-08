@@ -115,7 +115,7 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <Ticket points={this.state.points} updatePoints={this.pollPoints} accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton}/>
+            <Ticket points={this.state.points} accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton}/>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
@@ -142,15 +142,7 @@ class Home extends Component {
           </div>
           <div className="pure-u-1-1 hero-container" id="claim-payouts">
             <div className="pure-u-1-2 hero">
-              <h2 className="header">Claim Payouts</h2>
-              <h3>Near-instant, fuss-free payouts.</h3>
-              {this.state.userLoading ? (
-                undefined
-              ) : this.state.userExists ? (
-                <Coverage contracts={this.props.contracts} />
-              ) : (
-                createAccountButton
-              )}
+              <Coverage contracts={this.props.contracts} accounts={this.props.accounts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton} />
             </div>
           </div>
         </div>

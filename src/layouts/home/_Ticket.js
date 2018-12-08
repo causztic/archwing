@@ -111,7 +111,6 @@ class Ticket extends Component {
     // we pad the exchange rate to take care of any last minute conversion rate changes.
     const price = booking.ticketType === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
     this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber, loyaltyPoints, { value: price / (this.state.conversionRate - 1000) });
-    this.props.updatePoints();
   }
 
   handleFileChosen = (event) => {
