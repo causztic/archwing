@@ -10,6 +10,9 @@ import {
 
 import { parseTicketPDF } from '../../util/ticket';
 
+const SINGLE_TRIP_PRICE = 2000E18
+const ROUND_TRIP_PRICE  = 3000E18
+
 class Ticket extends Component {
   constructor(props, context) {
     super(props);
@@ -17,23 +20,29 @@ class Ticket extends Component {
     this.state = {
       ticket1: null,
       ticket2: null,
-      bookings: JSON.parse(localStorage.getItem("archwing_bookings")),
+      bookings: [],
       syncing: false,
+      conversionRate: null
     }
-    this.bookingDataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
-    this.conversionDataKey = this.contracts.ConversionRate.methods.getConversionToSGD.cacheCall();
   }
 
   componentDidMount() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
+    this.pollConversionRate().then((conversionRate) => {
+      this.setState({ conversionRate });
+    });
+    this.pollBookingNumbers().then((bookings) => {
+      this.setState({ bookings });
+    })
   }
 
   async pollBookingNumbers() {
+    const bookingDataKey = this.contracts.FlightValidity.methods.getBookingNumbers.cacheCall();
     let i = 0;
     while (i < 20) {
-      if (this.bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
+      if (bookingDataKey in this.props.contracts.FlightValidity.getBookingNumbers) {
         return this.props.contracts.FlightValidity.getBookingNumbers[
-          this.bookingDataKey
+          bookingDataKey
         ].value;
       }
       i++;
@@ -43,11 +52,12 @@ class Ticket extends Component {
   }
 
   async pollConversionRate() {
+    const conversionDataKey = this.contracts.ConversionRate.methods.getConversionToSGD.cacheCall();
     let i = 0;
     while (i < 20) {
-      if (this.conversionDataKey in this.props.contracts.ConversionRate.getConversionToSGD) {
+      if (conversionDataKey in this.props.contracts.ConversionRate.getConversionToSGD) {
         return this.props.contracts.ConversionRate.getConversionToSGD[
-          this.conversionDataKey
+          conversionDataKey
         ].value;
       }
       i++;
@@ -61,14 +71,13 @@ class Ticket extends Component {
     let tickets = await this.pollBookingNumbers();
     this.setState({ syncing: false });
     console.log(tickets);
-    localStorage.setItem("archwing_bookings", JSON.stringify(tickets));
     this.setState({ bookings: tickets});
   }
 
   async insureFor(bookingNumber) {
     // single trip ticket purchase
     let rate = await this.pollConversionRate();
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(bookingNumber, false, { value: 20E18 / rate });
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(bookingNumber, false, { value: SINGLE_TRIP_PRICE / rate });
   }
 
   handleFileChosen = (event) => {
@@ -141,7 +150,6 @@ class Ticket extends Component {
     }else {
       ticketViewer = <b>You have not uploaded any tickets yet.</b>;
     }
-
     return (
       <>
         <div className="pure-u-3-5 hero">
@@ -153,6 +161,10 @@ class Ticket extends Component {
             this.props.createAccountButton
           ) :
             (<>
+              <h4>Current Rates: </h4>
+              <b>Single Trip: 20SGD / { SINGLE_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+              <br/>
+              <b>Round Trip:  30SGD / { ROUND_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
               <pre>Upload your Ticket PDF</pre>
               <input type="file" onChange={this.handleFileChosen} />
               <button className="pure-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
