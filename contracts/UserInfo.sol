@@ -79,17 +79,23 @@ contract UserInfo {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        uint8 _status;
+        uint8 status;
         uint8 processStatus;
         bool ticketSet;
         uint8 ticketType;
+        uint256 lastUpdated;
 
-        (processStatus, ticketType, _status, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
-        require(ticketSet, "bookingNumber not found");
+        (processStatus, ticketType,
+            status, ticketSet, lastUpdated) = fv.ticketStatuses(msg.sender, bookingNumber);
+        // We have commented the below require() out because our API is currently static
+        // In actual scenario, this would have to be checked in order to buy insurance
+        // require(status == 0);
+        require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
+        require(ticketSet, "Booking number not found");
         require(processStatus == 2, "Invalid ticket status");
-        require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
+        require(!user.insurances[bookingNumber].set, "Cannot buy multiple insurances for the same booking number");
 
-        // It is the user's responsibility to call the contract to update the conversion before buying the insurance.
+        // It is the company's responsibility to keep this conversion rate updated
         uint256 rate = cr.getConversionToSGD();
         assert(rate > 0);
         // Ensure that the company has enough to pay for all cancelled tickets
@@ -114,7 +120,7 @@ contract UserInfo {
             }
 
             // e.g. price is 15000 for $150 per ether
-            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000.
+            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000
             // we do 3000*(1e18-1e15)/15000 = 200 finney == 0.2 ether
             // With this reasoning, we can do 3000e18/15000 to obtain the same value in wei
             price = price / rate;
@@ -145,9 +151,11 @@ contract UserInfo {
         uint8 _processStatus;
         uint8 _ticketType;
         bool _set;
+        uint256 _lastUpdated;
         uint8 status;
 
-        (_processStatus, _ticketType, status, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
+        (_processStatus, _ticketType,
+            status, _lastUpdated, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
         Coverage.Insurance storage insurance = user.insurances[bookingNumber];
         require(insurance.set, "Insurance not found.");
         // status = 0 is normal and cannot be claimed

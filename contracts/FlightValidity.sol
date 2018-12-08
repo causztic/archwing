@@ -63,6 +63,7 @@ contract FlightValidity is usingOraclize {
 
         ticketStatuses[userAddress][bookingNumber].processStatus = uint8(processStatus);
         ticketStatuses[userAddress][bookingNumber].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber].lastUpdated = block.timestamp;
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
