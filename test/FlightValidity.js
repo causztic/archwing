@@ -24,9 +24,9 @@ contract('FlightValidity', (accounts) => {
     userInst = await UserInfo.deployed();
     defaultAcc = accounts[0];
     testTickets = [
-      {b: "AAAAG", r: false},  // booking number and return-trip
-      {b: "AAAA0", r: false},
-      {b: "AAAAA", r: false}
+      {b: "AAAAG", r: 0},  // booking number and return-trip
+      {b: "AAAA0", r: 0},
+      {b: "AAAAA", r: 0}
     ]
   })
   

@@ -20,6 +20,7 @@ class Ticket extends Component {
     super(props);
     this.contracts = context.drizzle.contracts;
     this.state = {
+      returnTrip: false,
       ticket1: null,
       ticket2: null,
       bookings: [],
@@ -158,9 +159,28 @@ class Ticket extends Component {
       console.log("No file chosen.");
       return;
     }
-    const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false, { value: EXTRA_GAS });
-    this.setState({ ticket1: null });
+    if (this.state.returnTrip && this.state.ticket2 === null) {
+      console.log("Second file not chosen.");
+      return;
+    }
+    let bookingNum1, bookingNum2;
+    bookingNum1 = Web3.utils.fromAscii(this.state.ticket1.resCode);
+    if (this.state.returnTrip) {
+      bookingNum2 = Web3.utils.fromAscii(this.state.ticket2.resCode);
+      if (bookingNum1 !== bookingNum2) {
+        console.log("The two booking numbers are not the same!");
+        return;
+      }
+    }
+
+    const ticketType = this.state.returnTrip ? 1 : 0;
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(
+      bookingNum1, ticketType, { value: EXTRA_GAS });
+    if (this.state.returnTrip) {
+      this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(
+        bookingNum2, 2, { value: EXTRA_GAS });
+    }
+    this.setState({ ticket1: null, ticket2: null });
   }
 
   getBookingStatus = (processStatus) => {
@@ -172,7 +192,8 @@ class Ticket extends Component {
     let ticketViewer = [];
     if (this.state.syncBookings) {
       ticketViewer = <b>Loading..</b>;
-    } else if (this.props.userExists && Array.isArray(this.state.bookings) && this.state.bookings.length) {
+    } else if (this.props.userExists && Array.isArray(this.state.bookings)
+        && this.state.bookings.length) {
       for (let booking of this.state.bookings) {
         const pointReq = booking.ticketType === 0 ? 100 : 150;
         let status = this.getBookingStatus(booking.processStatus);
@@ -232,9 +253,17 @@ class Ticket extends Component {
               { this.state.syncPrice ? <b>Updating Price..</b> :
                 <>
                   <br/>
-                  <b>Single Trip: 20SGD or { SINGLE_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+                  <b>
+                    Single Trip: 20SGD or {
+                      SINGLE_TRIP_PRICE / this.state.conversionRate / 1E18
+                    } Ether
+                  </b>
                   <br/>
-                  <b>Round Trip:  30SGD or { ROUND_TRIP_PRICE / this.state.conversionRate / 1E18 } Ether</b>
+                  <b>
+                    Round Trip:  30SGD or {
+                      ROUND_TRIP_PRICE / this.state.conversionRate / 1E18
+                    } Ether
+                  </b>
                   <br/>
                 </>
               }

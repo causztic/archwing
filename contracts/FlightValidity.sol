@@ -71,7 +71,7 @@ contract FlightValidity is usingOraclize {
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber, bool returnTripBool) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, uint8 returnTrip) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
@@ -80,13 +80,13 @@ contract FlightValidity is usingOraclize {
             revert("Oraclize query not sent, not enough ETH");
         } else {
             string memory returnTripStr;
-            uint8 returnTrip;
-            if (returnTripBool) {
+            require(returnTrip <= 2, "returnTrip can only be 0, 1 or 2");
+            if (returnTrip == 2) {
+                returnTripStr = "2";
+            } else if (returnTrip == 1) {
                 returnTripStr = "1";
-                returnTrip = 1;
             } else {
                 returnTripStr = "0";
-                returnTrip = 0;
             }
 
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
