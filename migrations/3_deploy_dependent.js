@@ -11,7 +11,7 @@ module.exports = function(deployer) {
         await ConversionRate.deployed();
         await FlightValidity.deployed();
 
-        await deployer.deploy(UserInfo, ConversionRate.address, FlightValidity.address, { value: 51E18 });
+        await deployer.deploy(UserInfo, ConversionRate.address, FlightValidity.address, { value: 251E18 });
 
         return await UserInfo.deployed();
     });

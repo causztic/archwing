@@ -33,7 +33,7 @@ contract UserInfo {
     uint256 numInsurances;
 
     constructor(address conversionAddr, address flightAddr) public payable {
-        require(msg.value > 50 ether, "Put in at least 50 ether as seed fund");
+        require(msg.value > 250 ether, "Put in at least 250 ether as seed fund");
         cr = ConversionRate(conversionAddr);
         fv = FlightValidity(flightAddr);
     }
