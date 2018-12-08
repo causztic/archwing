@@ -29,7 +29,7 @@ contract UserInfo {
     FlightValidity private fv;
 
     mapping(address => User) private users;
-    mapping(address => uint) claims;
+    mapping(address => uint) public claims;
     uint256 numInsurances;
 
     constructor(address conversionAddr, address flightAddr) public payable {

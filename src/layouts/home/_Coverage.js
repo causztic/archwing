@@ -12,6 +12,7 @@ class Coverage extends Component {
     this.contracts = context.drizzle.contracts;
     this.state = {
       coverages: {},
+      payout: 0,
       syncCoverages: true
     };
   }
@@ -89,6 +90,22 @@ class Coverage extends Component {
     return [];
   }
 
+  async pollPayouts() {
+    const payoutKey = this.contracts.UserInfo.methods.claims.cacheCall(this.props.accounts[0]);
+    let i = 0;
+    while (i < 20) {
+      if (payoutKey in this.props.contracts.UserInfo.claims) {
+        let payout = BigNumber(this.props.contracts.UserInfo.claims[
+          payoutKey
+        ].value).toNumber();
+        return payout;
+      }
+      i++;
+      await delay(500);
+    }
+    return 0;
+  }
+
   async updateCoverages() {
     this.setState({
       syncCoverages: true
@@ -108,9 +125,8 @@ class Coverage extends Component {
           };
         });
       }
-      this.setState({
-        coverages
-      });
+      this.pollPayouts().then(payout => this.setState({ payout }));
+      this.setState({ coverages });
     });
     await delay(1000);
     this.setState({ syncCoverages: false });
@@ -175,7 +191,7 @@ class Coverage extends Component {
               <tbody>{coverageRows}</tbody>
             </table>
             <br/>
-            <button className="pure-button valid pure-u-1-1" onClick={this.claimPayouts}>Withdraw Payouts</button>
+            <button className="pure-button valid pure-u-1-1" onClick={this.claimPayouts}>Withdraw Payout of {this.state.payout}</button>
           </>
         );
       } else {
