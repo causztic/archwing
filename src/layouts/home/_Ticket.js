@@ -107,10 +107,10 @@ class Ticket extends Component {
     this.setState({ bookings: tickets});
   }
 
-  async insureFor(booking) {
+  async insureFor(booking, loyaltyPoints) {
     // single trip ticket purchase
     // we apad the exchange rate to take care of any last minute conversion rate changes.
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, false, { value: SINGLE_TRIP_PRICE / (this.state.conversionRate - 1000) });
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking, loyaltyPoints, { value: SINGLE_TRIP_PRICE / (this.state.conversionRate - 1000) });
   }
 
   handleFileChosen = (event) => {
@@ -184,7 +184,12 @@ class Ticket extends Component {
               {statusLogo}
               {Web3.utils.toAscii(booking.bookingNumber)}
             </div>
-            { status === "valid" ? <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber)}>Get Insured</button> : null }
+            { status === "valid" ?
+              <>
+                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber, false)}>Get Insured</button>
+                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking.bookingNumber, true)}>Use AWPoints</button>
+              </> : null
+            }
           </div>
         );
       }
@@ -220,7 +225,7 @@ class Ticket extends Component {
               </button>
             </>)}
         </div>
-        <div className="pure-u-2-5 hero">
+        <div className="pure-u-3-5 hero">
           <h3 className="with-icon">Your Tickets</h3>
           { !this.props.userLoading && this.props.userExists ?
           <div className="sync-icon" onClick={() => this.updateTickets()}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncBookings}/></div>
