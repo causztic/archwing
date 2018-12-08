@@ -21,8 +21,10 @@ class Home extends Component {
       points: 0,
       userLoading: true,
       userExists: false,
+      createAccStatus: "none"
     }
     this.contracts = context.drizzle.contracts;
+    this.drizzle = context.drizzle;
   }
 
   componentDidMount() {
@@ -64,19 +66,52 @@ class Home extends Component {
     return 0;
   }
 
-  createAccount = () => {
-    this.contracts.UserInfo.methods.createUser.cacheSend();
+  async createAccount() {
+    const stackId = this.contracts.UserInfo.methods.createUser.cacheSend();
+    let i = 0;
+    while (i < 50) {
+      let state = this.drizzle.store.getState();
+      if (state.transactionStack[stackId]) {
+        const txHash = state.transactionStack[stackId];
+        const txStatus = state.transactions[txHash].status;
+        if (txStatus === "success") {
+          this.setState({createAccStatus: "done"});
+          return;
+        } else if (txStatus === "pending") {
+          this.setState({createAccStatus: "pending"});
+        } else {
+          this.setState({createAccStatus: "error"});
+        }
+      }
+      i++;
+      await delay(500);
+    }
   };
 
   render() {
     const createAccountButton = (
       <button
         className="pure-button pure-button-primary"
-        onClick={this.createAccount}
+        onClick={this.createAccount.bind(this)}
       >
         Create your account now!
       </button>
     );
+    
+    const createAccountDiv = () => {
+      switch (this.state.createAccStatus) {
+        case "none":
+          return createAccountButton;
+        case "pending":
+          return "Creating account...";
+        case "done":
+          return undefined;
+        case "error":
+          return "Error creating account";
+        default:
+          return "WHAT?!";
+      }
+    }
 
     return (
       <main className="container">
@@ -106,7 +141,8 @@ class Home extends Component {
                 ? undefined
                 : this.state.userExists
                 ? undefined
-                : createAccountButton}
+                : createAccountDiv()}
+              {this.state.creatingAcc ? "Hello" : undefined}
             </div>
             <a href="#instant-coverage">
               <div className="bouncing-arrow">

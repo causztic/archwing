@@ -38,7 +38,8 @@ class Ticket extends Component {
     })
   }
   async pollBookingStatus(bookingNumber) {
-    const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(this.props.accounts[0], bookingNumber);
+    const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(
+      this.props.accounts[0], bookingNumber);
     let i = 0;
     while (i < 20) {
       if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
@@ -110,7 +111,8 @@ class Ticket extends Component {
   async insureFor(booking, loyaltyPoints) {
     // we pad the exchange rate to take care of any last minute conversion rate changes.
     const price = booking.ticketType === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
-    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber, loyaltyPoints, { value: price / (this.state.conversionRate - 1000) });
+    this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber,
+      loyaltyPoints, { value: price / (this.state.conversionRate - 1000) });
   }
 
   handleFileChosen = (event) => {
@@ -189,8 +191,19 @@ class Ticket extends Component {
             </div>
             { status === "valid" ?
               <>
-                <button className="pure-button process-status valid" onClick={() => this.insureFor(booking, false)}>Get Insured</button>
-                <button className={`pure-button process-status ${pointsStatus}}`} disabled={pointsStatus === "pending"} onClick={() => this.insureFor(booking.bookingNumber, true)}>Use AWPoints</button>
+                <button
+                  className="pure-button process-status valid"
+                  onClick={() => this.insureFor(booking, false)}
+                >
+                  Get Insured
+                </button>
+                <button
+                  className={`pure-button process-status ${pointsStatus}}`}
+                  disabled={pointsStatus === "pending"}
+                  onClick={() => this.insureFor(booking.bookingNumber, true)}
+                >
+                  Use AWPoints
+                </button>
               </> : null
             }
           </div>
@@ -211,7 +224,9 @@ class Ticket extends Component {
           ) :
             (<>
               <h4 className="with-icon">Current Rates: </h4>
-              <div className="sync-icon" onClick={() => this.updatePrice()}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncPrice}/></div>
+              <div className="sync-icon" onClick={() => this.updatePrice()}>
+                <FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncPrice}/>
+              </div>
               { this.state.syncPrice ? <b>Updating Price..</b> :
                 <>
                   <br/>
@@ -231,7 +246,9 @@ class Ticket extends Component {
         <div className="pure-u-3-5 hero">
           <h3 className="with-icon">Your Tickets</h3>
           { !this.props.userLoading && this.props.userExists ?
-          <div className="sync-icon" onClick={() => this.updateTickets()}><FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncBookings}/></div>
+          <div className="sync-icon" onClick={() => this.updateTickets()}>
+            <FontAwesomeIcon icon={faSync} size="lg" spin={this.state.syncBookings}/>
+          </div>
           : undefined
           }
           <div className="tickets">{ticketViewer}</div>
