@@ -5,6 +5,7 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 import { Coverage } from "./Coverage.sol";
 
 contract FlightValidity is usingOraclize {
+    uint256 constant CUSTOM_CALLBACK_GAS = 230000;
 
     struct UserBooking {
         bytes8 bookingNumber;
@@ -74,7 +75,7 @@ contract FlightValidity is usingOraclize {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
-        if (oraclize_getPrice("URL") > address(this).balance) {
+        if (oraclize_getPrice("URL", CUSTOM_CALLBACK_GAS) > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
@@ -97,13 +98,15 @@ contract FlightValidity is usingOraclize {
                     "&return=",
                     returnTripStr,
                     ").ticket"
-                )
+                ),
+                CUSTOM_CALLBACK_GAS
             );
             if (!ticketStatuses[msg.sender][bookingNumber].set) {
                 ticketStatuses[msg.sender][bookingNumber] = Coverage.TicketStatus({
                     processStatus: 0,
                     ticketType: returnTrip,
                     flightStatus: 0,
+                    lastUpdated: 0,
                     set: true
                 });
                 // need a way to prevent too many booking numbers to be added.

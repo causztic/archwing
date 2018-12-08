@@ -86,7 +86,7 @@ contract UserInfo {
         uint256 lastUpdated;
 
         (processStatus, ticketType,
-            status, ticketSet, lastUpdated) = fv.ticketStatuses(msg.sender, bookingNumber);
+            status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
         // We have commented the below require() out because our API is currently static
         // In actual scenario, this would have to be checked in order to buy insurance
         // require(status == 0);

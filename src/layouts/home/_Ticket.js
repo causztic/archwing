@@ -10,8 +10,10 @@ import {
 
 import { parseTicketPDF } from '../../util/ticket';
 
-const SINGLE_TRIP_PRICE = 2000E18
-const ROUND_TRIP_PRICE  = 3000E18
+// Gas needed for Oraclize and respective callback
+const EXTRA_GAS = 4.6E15
+const SINGLE_TRIP_PRICE = 2000E18 + EXTRA_GAS
+const ROUND_TRIP_PRICE  = 3000E18 + EXTRA_GAS
 
 class Ticket extends Component {
   constructor(props, context) {
@@ -110,9 +112,9 @@ class Ticket extends Component {
 
   async insureFor(booking, loyaltyPoints) {
     // we pad the exchange rate to take care of any last minute conversion rate changes.
-    const price = booking.ticketType === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
+    const price = booking.ticketType == 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
     this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber,
-      loyaltyPoints, { value: price / (this.state.conversionRate - 1000) });
+      loyaltyPoints, { value: price / (this.state.conversionRate) });
   }
 
   handleFileChosen = (event) => {
@@ -157,7 +159,7 @@ class Ticket extends Component {
       return;
     }
     const bookingNum = Web3.utils.fromAscii(this.state.ticket1.resCode);
-    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false, { value: 200000 });
+    this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(bookingNum, false, { value: EXTRA_GAS });
     this.setState({ ticket1: null });
   }
 
@@ -236,7 +238,10 @@ class Ticket extends Component {
                   <br/>
                 </>
               }
-              <pre>Upload your Ticket PDF</pre>
+              <pre>
+                <p>Upload your Ticket PDF</p>
+                Note: There is a processing fee for the ticket
+              </pre>
               <input type="file" onChange={this.handleFileChosen} />
               <button className="pure-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
                 Submit

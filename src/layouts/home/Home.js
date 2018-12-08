@@ -76,6 +76,7 @@ class Home extends Component {
         const txStatus = state.transactions[txHash].status;
         if (txStatus === "success") {
           this.setState({createAccStatus: "done"});
+          this.setState({userExists: true});
           return;
         } else if (txStatus === "pending") {
           this.setState({createAccStatus: "pending"});
@@ -150,7 +151,14 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <Ticket points={this.state.points} accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton}/>
+            <Ticket
+              points={this.state.points}
+              accounts={this.props.accounts}
+              contracts={this.props.contracts} 
+              userLoading={this.state.userLoading} 
+              userExists={this.state.userExists} 
+              createAccountButton={createAccountDiv()}
+            />
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
@@ -166,7 +174,7 @@ class Home extends Component {
               ) : this.state.userExists ? (
                 <p>You currently have {this.state.points} AWPoints.</p>
               ) : (
-                createAccountButton
+                createAccountDiv()
               )}
             </div>
             <a href="#claim-payouts">
@@ -177,7 +185,13 @@ class Home extends Component {
           </div>
           <div className="pure-u-1-1 hero-container" id="claim-payouts">
             <div className="pure-u-1-2 hero">
-              <Coverage contracts={this.props.contracts} accounts={this.props.accounts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton} />
+              <Coverage
+                contracts={this.props.contracts}
+                accounts={this.props.accounts}
+                userLoading={this.state.userLoading}
+                userExists={this.state.userExists}
+                createAccountButton={createAccountDiv()}
+              />
             </div>
           </div>
         </div>
