@@ -179,8 +179,11 @@ contract UserInfo {
         }
 
         claims[msg.sender] += payout;
-        assert(numInsurances > 0);
-        numInsurances -= 1;
+
+        // this technically is inaccurate because the user can claim a delayed insurance
+        //and it turns out to be cancelled.
+        // assert(numInsurances > 0);
+        // numInsurances -= 1;
     }
 
     function claimPayouts() external {
