@@ -1,10 +1,10 @@
 /* eslint-disable */
 const Coverage = artifacts.require("Coverage");
-const UserInfo = artifacts.require("UserInfo");
 const ConversionRate = artifacts.require("ConversionRate");
+const FlightValidity = artifacts.require("FlightValidity");
 
-module.exports = function(deployer) {
+module.exports = function(deployer, network, accounts) {
   deployer.deploy(Coverage);
-  deployer.deploy(ConversionRate);
-  deployer.deploy(UserInfo);
+  deployer.deploy(FlightValidity);
+  deployer.deploy(ConversionRate).then((cr) => cr.updateConversionToSGD())
 };

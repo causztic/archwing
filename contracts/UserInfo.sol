@@ -1,99 +1,194 @@
 pragma solidity ^0.4.24;
+
 import { Coverage } from "./Coverage.sol";
+import { FlightValidity } from "./FlightValidity.sol";
+import { ConversionRate } from "./ConversionRate.sol";
 
 contract UserInfo {
-    struct Ticket {
-        uint8 processStatus;  // 0 - pending, 1 - invalid, 2 - valid
-        bool set;
-    }
+    // price in SGD, multiplied by the nomination of wei
+    // this way we can do division without floating points as accurately as possible
+    uint256 constant ROUNDTRIP_PRICE_SGD = 3000e18;
+    uint256 constant SINGLETRIP_PRICE_SGD = 2000e18;
+    // price in loyalty points
+    uint256 constant ROUNDTRIP_PRICE_POINTS = 150;
+    uint256 constant SINGLETRIP_PRICE_POINTS = 100;
+    // points reward for purchase
+    uint256 constant ROUNDTRIP_REWARD_POINTS = 30;
+    uint256 constant SINGLETRIP_REWARD_POINTS = 10;
+    // payout for insurance
+    uint256 constant DELAYED_PAYOUT = 20000e18;
+    uint256 constant CANCELLED_PAYOUT = 500000e18;
 
     struct User {
-        mapping(bytes8 => Ticket) tickets;
-        mapping(uint256 => Coverage.Insurance) insurances;
-        uint256 insuranceSize;
-        // LIMITATION: Copying of type struct Coverage.Insurance memory[] memory to storage not yet supported
-        // Coverage.Insurance[] insurances;
+        mapping(bytes8 => Coverage.Insurance) insurances;
         uint256 points;
         bool set;
     }
-    
-    address allowedCaller;
+
+    ConversionRate private cr;
+    FlightValidity private fv;
+
     mapping(address => User) private users;
-    
-    function setAllowedCaller(address contractAddr) public {
-        require(allowedCaller == address(0), "Allowed caller already set");
-        allowedCaller = contractAddr;
+    mapping(address => uint) public claims;
+    uint256 numInsurances;
+
+    constructor(address conversionAddr, address flightAddr) public payable {
+        require(msg.value > 250 ether, "Put in at least 250 ether as seed fund");
+        cr = ConversionRate(conversionAddr);
+        fv = FlightValidity(flightAddr);
     }
 
-    function userExists() public view returns (bool) {
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function userExists() external view returns (bool) {
         User storage user = users[msg.sender];
         return user.set;
     }
 
-    function createUser() public {
+    function createUser() external {
         User storage user = users[msg.sender];
-        // Check that the user did not already exist:
         require(!user.set, "User already exists");
-        // Store the user
         users[msg.sender] = User({
-            insuranceSize: 0,
             points: 0,
             set: true
         });
     }
 
-    function getPoints() public view returns (uint256) {
+    function getPoints() external view returns (uint256) {
         User storage user = users[msg.sender];
         require(user.set, "User does not exist");
 
         return user.points;
     }
 
-    function removePoints(uint256 points) private {
-        require(points > 0, "Given points is non-positive");
+    // INSURANCES
+
+    function getInsurance(bytes8 bookingNumber) external view returns (bytes8, uint256) {
         User storage user = users[msg.sender];
-        require(user.set, "User does not exist");
+        require(user.set, "User is not set");
 
-        user.points -= points;
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        require(insurance.set, "Insurance not found.");
+
+        return (bookingNumber, insurance.claimStatus);
     }
 
-    function addPoints(uint256 points) private {
-        // TODO: restrict this to contract-contract only
-        require(points > 0, "Given points is non-positive");
+    function buyInsurance(bytes8 bookingNumber, bool buyWithLoyalty) external payable {
         User storage user = users[msg.sender];
-        require(user.set, "User does not exist");
+        require(user.set, "User is not set");
 
-        user.points += points;
-    }
-    
-    modifier onlyFlightVal {
-        require(msg.sender == allowedCaller, "Invalid caller");
-        _;
-    }
-    
-    function addTicket(bytes8 bookingNum, address userAddr) public onlyFlightVal {
-        User storage user = users[userAddr];
-        require(user.set, "User does not exist");
+        uint8 _status;
+        uint8 processStatus;
+        bool ticketSet;
+        uint8 ticketType;
 
-        Ticket storage ticket = user.tickets[bookingNum];
-        require(!ticket.set, "Ticket already added");
-        users[userAddr].tickets[bookingNum] = Ticket({
-            processStatus: 0,
+        (processStatus, ticketType, _status, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
+        require(ticketSet, "bookingNumber not found");
+        require(processStatus == 2, "Invalid ticket status");
+        require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
+
+        // It is the user's responsibility to call the contract to update the conversion before buying the insurance.
+        uint256 rate = cr.getConversionToSGD();
+        assert(rate > 0);
+        // Ensure that the company has enough to pay for all cancelled tickets
+        // Currently doesnt remove insurances that have expired tho
+        uint256 maxTotalPayout = (numInsurances + 1) * CANCELLED_PAYOUT;
+        require((maxTotalPayout / rate) <= getBalance(), "Company is broke! Don't buy from us.");
+
+        if (buyWithLoyalty) {
+            // Buy with points
+            uint256 pointsToDeduct = ROUNDTRIP_PRICE_POINTS;
+            if (ticketType == 0) {
+                pointsToDeduct = SINGLETRIP_PRICE_POINTS;
+            }
+
+            require(user.points >= pointsToDeduct, "Not enough points to buy insurance");
+            user.points -= pointsToDeduct;
+        } else {
+            // Buy normally
+            uint256 price = ROUNDTRIP_PRICE_SGD;
+            if (ticketType == 0) {
+                price = SINGLETRIP_PRICE_SGD;
+            }
+
+            // e.g. price is 15000 for $150 per ether
+            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000.
+            // we do 3000*(1e18-1e15)/15000 = 200 finney == 0.2 ether
+            // With this reasoning, we can do 3000e18/15000 to obtain the same value in wei
+            price = price / rate;
+            require(msg.value >= price, "Not enough money!");
+
+            // Loyalty reward at the end
+            if (ticketType == 0) {
+                user.points += SINGLETRIP_REWARD_POINTS;
+            } else {
+                user.points += ROUNDTRIP_REWARD_POINTS;
+            }
+        }
+
+        user.insurances[bookingNumber] = Coverage.Insurance({
+            claimStatus: 0,
             set: true
         });
-    }
-    
-    function updateTicket(
-        bytes8 bookingNum, uint8 newStatus, address userAddr) public onlyFlightVal {
-        require(
-            newStatus >= 0 && newStatus <= 2,
-            "Invalid processing status code for ticket"
-        );
-        User storage user = users[userAddr];
-        require(user.set, "User does not exist");
 
-        Ticket storage ticket = user.tickets[bookingNum];
-        require(ticket.set, "Ticket does not exist");
-        users[userAddr].tickets[bookingNum].processStatus = newStatus;
+        numInsurances += 1;
+    }
+
+    // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
+    // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
+    function claimInsurance(bytes8 bookingNumber) public {
+        User storage user = users[msg.sender];
+        require(user.set, "User is not set");
+
+        uint8 _processStatus;
+        uint8 _ticketType;
+        bool _set;
+        uint8 status;
+
+        (_processStatus, _ticketType, status, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        require(insurance.set, "Insurance not found.");
+        // status = 0 is normal and cannot be claimed
+        require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");
+
+        // Ideally we should poll for the updated exchange rate here
+        uint256 rate = cr.getConversionToSGD();
+        uint256 payout;
+        assert(rate > 0);
+        if (status == 1 && insurance.claimStatus == 0) {
+            // Unclaimed delayed flight, add to claims
+            payout = DELAYED_PAYOUT / rate;
+            insurance.claimStatus = 1;
+        } else if (status == 2) {
+            assert(insurance.claimStatus <= 2);
+            if (insurance.claimStatus == 0) {
+                // Cancelled flight, add to claims
+                payout = CANCELLED_PAYOUT / rate;
+                insurance.claimStatus = 2;
+            } else if (insurance.claimStatus == 1) {
+                // Delayed flight became cancelled, add the remaining to claims
+                payout = (CANCELLED_PAYOUT - DELAYED_PAYOUT) / rate;
+                insurance.claimStatus = 2;
+            } else {
+                revert("Cancelled flight has been claimed");
+            }
+        } else {
+            revert("Delayed flight has been claimed");
+        }
+
+        claims[msg.sender] += payout;
+
+        // this technically is inaccurate because the user can claim a delayed insurance
+        //and it turns out to be cancelled.
+        // assert(numInsurances > 0);
+        // numInsurances -= 1;
+    }
+
+    function claimPayouts() external {
+        uint payout = claims[msg.sender];
+        claims[msg.sender] = 0; // clear the payouts before sending over
+        msg.sender.transfer(payout);
     }
 }

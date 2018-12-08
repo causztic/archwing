@@ -132,3 +132,49 @@ ul
       margin: 0 0 15px 12.5%
       width: 75%
       display: block
+
+.pending-ticket
+  display: flex
+  align-items: center
+  margin-bottom: 5px
+  .booking-number
+    font-weight: bold
+    text-align: left
+    width: 50%
+  .process-status
+    margin-left: 1em
+    padding: 5px
+
+.valid
+  background-color: rgb(28, 184, 65)
+  color: $white
+.invalid
+  background-color: rgb(202, 60, 60)
+  color: $white
+.pending
+  background-color: $denim
+  color: $white
+
+#instant-coverage
+  p
+    color: $steel
+  .tickets
+    background-color: $white
+    width: 50%
+    margin: auto
+    padding: 15px
+
+.sync-icon
+  display: inline-block
+  margin-left: 1em
+  &:hover
+    cursor: pointer
+    color: rgb(120, 120, 120)
+
+.with-icon
+  display: inline-block
+
+.pure-table
+  width: 100%
+  th
+    text-align: center

@@ -7,12 +7,12 @@ contract('ConversionRate', () => {
   it('should get initial empty ETH / SGD pairing', async () => {
     let instance = await ConversionRate.deployed();
     let price = await instance.getConversionToSGD.call();
-    assert.isEmpty(price);
+    assert.strictEqual(price.toNumber(), 0);
   });
 
   it('should update ETH / SGD pairing with the api', async () => {
     let instance = await ConversionRate.deployed();
-    let response = await instance.updateConversionToSGD();
+    let response = await instance.updateConversionToSGD({ value: 1E18 });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -25,6 +25,5 @@ contract('ConversionRate', () => {
     const eventWrapper = { 'logs': [log] }
     assert.web3Event(eventWrapper, { event: 'LogCallback' });
     assert.isNotNull(log.args.price, 'Price returned was null.');
-    // console.log(log.args.price);
   });
 });

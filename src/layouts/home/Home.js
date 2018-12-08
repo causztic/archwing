@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { BigNumber } from "bignumber.js";
+import { delay } from 'redux-saga';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faQuestion,
@@ -9,35 +10,65 @@ import {
   faMoneyBill,
   faChevronDown
 } from "@fortawesome/free-solid-svg-icons";
+import Coverage from "./_Coverage";
 
 import Ticket from "./_Ticket";
 
 class Home extends Component {
   constructor(props, context) {
     super(props);
-    this.points = 0;
-    this.userExists = false;
+    this.state = {
+      points: 0,
+      userLoading: true,
+      userExists: false,
+    }
     this.contracts = context.drizzle.contracts;
-    this.userExistsDataKey = this.contracts.UserInfo.methods.userExists.cacheCall();
+  }
+
+  componentDidMount() {
+    this.pollUser().then((userExists) => {
+      this.setState({ userExists, userLoading: false});
+      this.pollPoints().then((points) => {
+        this.setState({ points });
+      });
+    })
+  }
+
+  async pollUser() {
+    const userExistsDataKey = this.contracts.UserInfo.methods.userExists.cacheCall();
+    let i = 0;
+    while (i < 20) {
+      if (userExistsDataKey in this.props.contracts.UserInfo.userExists) {
+        return(this.props.contracts.UserInfo.userExists[
+          userExistsDataKey
+        ].value);
+      }
+      i++;
+      await delay(500);
+    }
+    return false;
+  }
+
+  async pollPoints() {
+    const pointDataKey = this.contracts.UserInfo.methods.getPoints.cacheCall();
+    let i = 0;
+    while (i < 20) {
+      if (pointDataKey in this.props.contracts.UserInfo.getPoints) {
+        return(BigNumber(
+          this.props.contracts.UserInfo.getPoints[pointDataKey].value
+        ).toString(10));
+      }
+      i++;
+      await delay(500);
+    }
+    return 0;
   }
 
   createAccount = () => {
     this.contracts.UserInfo.methods.createUser.cacheSend();
   };
 
-  checkUserExists = () => {
-    if (this.userExistsDataKey in this.props.contracts.UserInfo.userExists) {
-      this.userExists = this.props.contracts.UserInfo.userExists[
-        this.userExistsDataKey
-      ].value;
-      this.points = BigNumber(
-        this.contracts.UserInfo.methods.getPoints.cacheCall()
-      ).toString(10);
-    }
-  };
-
   render() {
-    this.checkUserExists();
     const createAccountButton = (
       <button
         className="pure-button pure-button-primary"
@@ -46,6 +77,7 @@ class Home extends Component {
         Create your account now!
       </button>
     );
+
     return (
       <main className="container">
         <div className="anchor-menu">
@@ -70,7 +102,11 @@ class Home extends Component {
                 Flight delay / cancellation insurance distribution app with
                 smart contracts
               </p>
-              {this.userExists ? undefined : createAccountButton}
+              {this.state.userLoading
+                ? undefined
+                : this.state.userExists
+                ? undefined
+                : createAccountButton}
             </div>
             <a href="#instant-coverage">
               <div className="bouncing-arrow">
@@ -79,17 +115,7 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <div className="pure-u-1-2 hero">
-              <h2>Instant Coverage</h2>
-              <h3>
-                Get insured for single or round trips at affordable rates.
-              </h3>
-              {this.userExists ? (
-                <Ticket flightValidity={this.contracts.FlightValidity} />
-              ) : (
-                createAccountButton
-              )}
-            </div>
+            <Ticket points={this.state.points} accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton}/>
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
@@ -100,8 +126,10 @@ class Home extends Component {
             <div className="pure-u-1-2 hero">
               <h2>Loyalty Points</h2>
               <h3>Earn AWPoints for every plan you purchase with us.</h3>
-              {this.userExists ? (
-                <p>You currently have {this.points} AWPoints.</p>
+              {this.state.userLoading ? (
+                undefined
+              ) : this.state.userExists ? (
+                <p>You currently have {this.state.points} AWPoints.</p>
               ) : (
                 createAccountButton
               )}
@@ -114,13 +142,7 @@ class Home extends Component {
           </div>
           <div className="pure-u-1-1 hero-container" id="claim-payouts">
             <div className="pure-u-1-2 hero">
-              <h2 className="header">Claim Payouts</h2>
-              <h3>Near-instant, fuss-free payouts.</h3>
-              {this.userExists ? (
-                <p>You currently have no coverage plans with us.</p>
-              ) : (
-                createAccountButton
-              )}
+              <Coverage contracts={this.props.contracts} accounts={this.props.accounts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton} />
             </div>
           </div>
         </div>
