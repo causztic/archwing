@@ -76,7 +76,7 @@ class Ticket extends Component {
           bookingDataKey
         ].value;
         if (bookingNumbers) {
-          const statuses = bookingNumbers.map(this.pollBookingStatus, this);
+          const statuses = [...new Set(bookingNumbers)].map(this.pollBookingStatus, this);
           return await Promise.all(statuses);
         } else {
           return [];
