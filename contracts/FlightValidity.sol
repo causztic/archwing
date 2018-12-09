@@ -9,6 +9,7 @@ contract FlightValidity is usingOraclize {
 
     struct UserBooking {
         bytes8 bookingNumber;
+        uint8 ticketIndex;
         address userAddress;
         bool set;
     }
@@ -21,7 +22,7 @@ contract FlightValidity is usingOraclize {
     // but it is not a security vulnerability but a privacy issue. we could perform some hashing on the
     // booking numbers instead of storing them as-is.
     mapping (address => bytes8[]) private userBookings;
-    mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public ticketStatuses;
+    mapping (address => mapping(bytes8 => mapping(uint8 => Coverage.TicketStatus))) public ticketStatuses;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
@@ -33,8 +34,9 @@ contract FlightValidity is usingOraclize {
         // with the queryId completes
         require(flightMappings[queryId].set, "Invalid queryId");
 
-        bytes8 bookingNumber = flightMappings[queryId].bookingNumber;
         address userAddress = flightMappings[queryId].userAddress;
+        bytes8 bookingNumber = flightMappings[queryId].bookingNumber;
+        uint8 ticketIndex = flightMappings[queryId].ticketIndex;
 
         uint256 processStatus = 1;
         uint256 departureTime;
@@ -62,9 +64,9 @@ contract FlightValidity is usingOraclize {
             }
         }
 
-        ticketStatuses[userAddress][bookingNumber].processStatus = uint8(processStatus);
-        ticketStatuses[userAddress][bookingNumber].flightStatus = uint8(status);
-        ticketStatuses[userAddress][bookingNumber].lastUpdated = block.timestamp;
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
@@ -101,8 +103,10 @@ contract FlightValidity is usingOraclize {
                 ),
                 CUSTOM_CALLBACK_GAS
             );
-            if (!ticketStatuses[msg.sender][bookingNumber].set) {
-                ticketStatuses[msg.sender][bookingNumber] = Coverage.TicketStatus({
+            
+            uint8 ticketIndex = returnTrip == 2 ? 1 : 0;
+            if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
+                ticketStatuses[msg.sender][bookingNumber][ticketIndex] = Coverage.TicketStatus({
                     processStatus: 0,
                     ticketType: returnTrip,
                     flightStatus: 0,
@@ -115,6 +119,7 @@ contract FlightValidity is usingOraclize {
 
             flightMappings[queryId] = UserBooking({
                 bookingNumber: bookingNumber,
+                ticketIndex: ticketIndex,
                 userAddress: msg.sender,
                 set: true
             });

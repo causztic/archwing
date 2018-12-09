@@ -20,7 +20,7 @@ contract UserInfo {
     uint256 constant CANCELLED_PAYOUT = 500000e18;
 
     struct User {
-        mapping(bytes8 => Coverage.Insurance) insurances;
+        mapping(bytes8 => mapping(uint8 => Coverage.Insurance)) insurances;
         uint256 points;
         bool set;
     }
@@ -29,7 +29,7 @@ contract UserInfo {
     FlightValidity private fv;
 
     mapping(address => User) private users;
-    mapping(address => uint) public claims;
+    mapping(address => uint256) public claims;
     uint256 numInsurances;
 
     constructor(address conversionAddr, address flightAddr) public payable {
@@ -65,11 +65,13 @@ contract UserInfo {
 
     // INSURANCES
 
-    function getInsurance(bytes8 bookingNumber) external view returns (bytes8, uint256) {
+    function getInsurance(bytes8 bookingNumber, uint8 index) external view returns (bytes8, uint256) {
+        require(index < 2, "Insurance index only takes values {0, 1}");
+        
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber][index];
         require(insurance.set, "Insurance not found.");
 
         return (bookingNumber, insurance.claimStatus);
@@ -85,15 +87,29 @@ contract UserInfo {
         uint8 ticketType;
         uint256 lastUpdated;
 
-        (processStatus, ticketType,
-            status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
-        // We have commented the below require() out because our API is currently static
-        // In actual scenario, this would have to be checked in order to buy insurance
-        // require(status == 0);
-        require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
-        require(ticketSet, "Booking number not found");
-        require(processStatus == 2, "Invalid ticket status");
-        require(!user.insurances[bookingNumber].set, "Cannot buy multiple insurances for the same booking number");
+        for (uint8 ticketIndex = 1; ticketIndex >= 0; ticketIndex--) {
+            (processStatus, ticketType,
+                status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, ticketIndex);
+            if (ticketIndex == 1) {
+                require(ticketSet, "Booking number not found");
+            } else if (!ticketSet) {
+                // Single trip ticket
+                continue;
+            }
+
+            // We have commented the below require() out because our API is currently static
+            // In actual scenario, this would have to be checked in order to buy insurance
+            // require(status == 0);
+            
+            // We require the user to buy the insurance within 30 minutes of
+            // updating the ticket statuses
+            require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
+            require(processStatus == 2, "Invalid ticket status");
+            require(
+                !user.insurances[bookingNumber][ticketIndex].set,
+                "Cannot buy multiple insurances for the same booking number"
+            );
+        }
 
         // It is the company's responsibility to keep this conversion rate updated
         uint256 rate = cr.getConversionToSGD();
@@ -134,17 +150,20 @@ contract UserInfo {
             }
         }
 
-        user.insurances[bookingNumber] = Coverage.Insurance({
-            claimStatus: 0,
-            set: true
-        });
-
-        numInsurances += 1;
+        for (uint8 ticketIndex = 0; ticketIndex <= ticketType; ticketIndex++) {
+            user.insurances[bookingNumber][ticketIndex] = Coverage.Insurance({
+                claimStatus: 0,
+                set: true
+            });
+        }
+        numInsurances += (1 + uint256(ticketType));
     }
 
     // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
     // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
-    function claimInsurance(bytes8 bookingNumber) public {
+    function claimInsurance(bytes8 bookingNumber, uint8 index) public {
+        require(index < 2, "Insurance index only takes values {0, 1}");
+        
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
@@ -155,8 +174,8 @@ contract UserInfo {
         uint8 status;
 
         (_processStatus, _ticketType,
-            status, _lastUpdated, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
-        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+            status, _lastUpdated, _set) = fv.ticketStatuses(msg.sender, bookingNumber, index);
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber][index];
         require(insurance.set, "Insurance not found.");
         // status = 0 is normal and cannot be claimed
         require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");
