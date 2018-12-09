@@ -8,11 +8,11 @@ const EXTRA_GAS = 4.6E15;
 
 const checkTicketStatus = (ticketStatus, expectedStatus) => {
   // Not checking the lastUpdated variable
-  assert.equal(ticketStatus.length, 5);
-  assert.equal(expectedStatus.length, 3);
-  for (let i = 0; i < 3; i++)
+  assert.equal(ticketStatus.length, 4);
+  assert.equal(expectedStatus.length, 2);
+  for (let i = 0; i < 2; i++)
     assert.equal(ticketStatus[i].toNumber(), expectedStatus[i]);
-  assert.equal(ticketStatus[4], true);
+  assert.equal(ticketStatus[3], true);
 }
 
 contract('FlightValidity', (accounts) => {
@@ -34,6 +34,7 @@ contract('FlightValidity', (accounts) => {
   // can be mitigated by having a fixed unused booking number with a very long age.
   it("should return with valid process status if ticket is valid", async () => {
     await userInst.createUser();
+    console.log(userInst.address);
     const ticket = testTickets[0];
     const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: EXTRA_GAS });
     assert.web3Event(response, {
@@ -55,8 +56,8 @@ contract('FlightValidity', (accounts) => {
       }
     })
     
-    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b);
-    const expectedStatus = [2, 0, 0];
+    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b, 0);
+    const expectedStatus = [2, 0];
     checkTicketStatus(ticketStatus, expectedStatus);
   })
 
@@ -82,8 +83,8 @@ contract('FlightValidity', (accounts) => {
       }
     })
     
-    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b);
-    const expectedStatus = [1, 0, 0];
+    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b, 0);
+    const expectedStatus = [1, 0];
     checkTicketStatus(ticketStatus, expectedStatus);
   })
 
@@ -109,8 +110,8 @@ contract('FlightValidity', (accounts) => {
       }
     })
 
-    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b);
-    const expectedStatus = [1, 0, 0];
+    const ticketStatus = await flightInst.ticketStatuses(defaultAcc, ticket.b, 0);
+    const expectedStatus = [1, 0];
     checkTicketStatus(ticketStatus, expectedStatus);
   })
   
