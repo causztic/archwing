@@ -58,7 +58,7 @@ class Coverage extends Component {
           statusDataKey
         ].value;
         flightStatus = set ? BigNumber(flightStatus).toNumber() : -1;
-        return { bookingNumber, flightStatus };
+        return { bookingNumber, tripIndex, flightStatus };
       }
       i++;
       await delay(500);
@@ -121,13 +121,14 @@ class Coverage extends Component {
         data.coverages
           .filter(coverage => coverage.claimStatus !== -1)
           .forEach(coverage => {
-            let flightStatus = data.bookings.find(
+            let booking = data.bookings.find(
               booking => booking.bookingNumber === coverage.bookingNumber
-            ).flightStatus;
-            if (flightStatus && flightStatus !== -1) {
+            );
+            if (booking && booking.flightStatus !== -1) {
               coverages[coverage.bookingNumber] = {
-                claimStatus: coverage.claimStatus,
-                flightStatus
+                claimStatus:  coverage.claimStatus,
+                flightStatus: booking.flightStatus,
+                tripIndex:    booking.tripIndex
               };
             }
           });
@@ -139,8 +140,8 @@ class Coverage extends Component {
     this.setState({ syncCoverages: false });
   }
 
-  claimInsurance = bookingNumber => {
-    this.contracts.UserInfo.methods.claimInsurance.cacheSend(bookingNumber);
+  claimInsurance = (bookingNumber, tripIndex) => {
+    this.contracts.UserInfo.methods.claimInsurance.cacheSend(bookingNumber, tripIndex);
   };
 
   claimPayouts = () => {
@@ -154,7 +155,7 @@ class Coverage extends Component {
         let coverageRows = [];
         for (let [
           bookingNumber,
-          { claimStatus, flightStatus }
+          { claimStatus, flightStatus, tripIndex }
         ] of Object.entries(this.state.coverages)) {
           let payoutStatus = true;
           if (claimStatus < 2) {
@@ -169,7 +170,7 @@ class Coverage extends Component {
           let claimButton = (
             <button
               className="pure-button"
-              onClick={() => this.claimInsurance(bookingNumber)}
+              onClick={() => this.claimInsurance(bookingNumber, tripIndex)}
               disabled={payoutStatus}
             >
               Claim Payout

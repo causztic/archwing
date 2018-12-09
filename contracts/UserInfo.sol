@@ -87,27 +87,31 @@ contract UserInfo {
         bool isRoundTrip;
         uint256 lastUpdated;
 
+        (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, 0);
+        // We have commented the below require() out because our API is currently static
+        // In actual scenario, this would have to be checked in order to buy insurance
+        // require(status == 0);
 
-        for (uint8 ticketIndex = 1; ticketIndex >= 0; ticketIndex--) {
-            (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, ticketIndex);
+        // We require the user to buy the insurance within 30 minutes of
+        // updating the ticket statuses to prevent fraud
+        // require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
+        require(processStatus == 2, "Invalid ticket status");
 
-            if (ticketIndex == 0 || ticketIndex == 1 && ticketSet) {
-                isRoundTrip = (ticketIndex == 1);
-                // single trip or round trip ticket
-                // We have commented the below require() out because our API is currently static
-                // In actual scenario, this would have to be checked in order to buy insurance
-                // require(status == 0);
-
-                // We require the user to buy the insurance within 30 minutes of
-                // updating the ticket statuses to prevent fraud
-                // require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
-                require(processStatus == 2, "Invalid ticket status");
-                require(
-                    !user.insurances[bookingNumber][ticketIndex].set,
-                    "Cannot buy multiple insurances for the same booking number"
-                );
-            }
+        (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, 1);
+        isRoundTrip = ticketSet;
+        if (isRoundTrip) {
+            require(processStatus == 2, "Invalid ticket status");
+            require(
+                !user.insurances[bookingNumber][1].set,
+                "Cannot buy multiple insurances for the same booking number"
+            );
         }
+
+        require(
+            !user.insurances[bookingNumber][0].set,
+            "Cannot buy multiple insurances for the same booking number"
+        );
+
 
         // It is the company's responsibility to keep this conversion rate updated
         uint256 rate = cr.getConversionToSGD();
