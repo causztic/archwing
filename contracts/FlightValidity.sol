@@ -5,8 +5,6 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 import { Coverage } from "./Coverage.sol";
 
 contract FlightValidity is usingOraclize {
-    uint256 constant CUSTOM_CALLBACK_GAS = 230000;
-
     struct UserBooking {
         bytes8 bookingNumber;
         uint8 ticketIndex;
@@ -41,7 +39,8 @@ contract FlightValidity is usingOraclize {
         uint256 processStatus = 1;
         uint256 departureTime;
         uint256 status;
-        if (strCompare(result, "false") != 0) {
+        bytes memory _res = bytes(result);
+        if (_res[0] == "{") {
             // Parse resulting JSON string
             uint returnVal;
             JsmnSolLib.Token[] memory tokens;
@@ -63,11 +62,13 @@ contract FlightValidity is usingOraclize {
             if (block.timestamp < departureTime) {
                 processStatus = 2;
             }
-        }
 
-        ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
-        ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
-        ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
+            ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
+            ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
+            ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
+        } else {
+            revert("Error fetching JSON");
+        }
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
@@ -80,7 +81,7 @@ contract FlightValidity is usingOraclize {
         // using booking number only for convenience
 
         // ticketIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
-        if (oraclize_getPrice("URL", CUSTOM_CALLBACK_GAS) > address(this).balance) {
+        if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
@@ -102,8 +103,7 @@ contract FlightValidity is usingOraclize {
                     "&return=",
                     ticketIndexStr,
                     ").ticket"
-                ),
-                CUSTOM_CALLBACK_GAS
+                )
             );
 
             if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
@@ -133,25 +133,6 @@ contract FlightValidity is usingOraclize {
     }
 
     // UTILS
-
-    function strCompare(string _a, string _b) internal pure returns (int) {
-        bytes memory a = bytes(_a);
-        bytes memory b = bytes(_b);
-        uint minLength = a.length;
-        if (b.length < minLength) minLength = b.length;
-        for (uint i = 0; i < minLength; i ++) {
-            if (a[i] < b[i])
-                return - 1;
-            else if (a[i] > b[i])
-                return 1;
-        }
-        if (a.length < b.length)
-            return - 1;
-        else if (a.length > b.length)
-            return 1;
-        else
-            return 0;
-    }
 
     function bytes8ToString(bytes8 x) internal pure returns (string) {
         bytes memory bytesString = new bytes(8);
