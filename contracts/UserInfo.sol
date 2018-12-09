@@ -99,7 +99,7 @@ contract UserInfo {
                 // require(status == 0);
 
                 // We require the user to buy the insurance within 30 minutes of
-                // updating the ticket statuses
+                // updating the ticket statuses to prevent fraud
                 require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
                 require(processStatus == 2, "Invalid ticket status");
                 require(
@@ -113,7 +113,7 @@ contract UserInfo {
         uint256 rate = cr.getConversionToSGD();
         assert(rate > 0);
         // Ensure that the company has enough to pay for all cancelled tickets
-        // Currently doesnt remove insurances that have expired tho
+        // there should be a better way, but this for now ensures fairness
         uint256 maxTotalPayout = (numInsurances + 1) * CANCELLED_PAYOUT;
         require((maxTotalPayout / rate) <= getBalance(), "Company is broke! Don't buy from us.");
 
@@ -152,13 +152,15 @@ contract UserInfo {
             claimStatus: 0,
             set: true
         });
+        numInsurances += 1;
+
         if (isRoundTrip) {
             user.insurances[bookingNumber][1] = Coverage.Insurance({
                 claimStatus: 0,
                 set: true
             });
+            numInsurances += 1;
         }
-        numInsurances += (1 + uint256(ticketType));
     }
 
     // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.

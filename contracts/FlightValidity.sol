@@ -74,23 +74,23 @@ contract FlightValidity is usingOraclize {
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber, uint8 tripIndex) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, uint8 ticketIndex) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
 
-        // tripIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
+        // ticketIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
         if (oraclize_getPrice("URL", CUSTOM_CALLBACK_GAS) > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
-            string memory tripIndexStr;
-            require(tripIndex == 0 || tripIndex == 1, "tripIndex can only be 0 or 1");
+            string memory ticketIndexStr;
+            require(ticketIndex < 2, "ticketIndex can only be 0 or 1");
             // 0 for to trip, 1 for return trip.
-            if (tripIndex == 1) {
-                tripIndexStr = "1";
+            if (ticketIndex == 1) {
+                ticketIndexStr = "1";
             } else {
-                tripIndexStr = "0";
+                ticketIndexStr = "0";
             }
 
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
@@ -100,14 +100,14 @@ contract FlightValidity is usingOraclize {
                     "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
                     bytes8ToString(bookingNumber),
                     "&return=",
-                    tripIndexStr,
+                    ticketIndexStr,
                     ").ticket"
                 ),
                 CUSTOM_CALLBACK_GAS
             );
 
-            if (!ticketStatuses[msg.sender][bookingNumber][tripIndex].set) {
-                ticketStatuses[msg.sender][bookingNumber][tripIndex] = Coverage.TicketStatus({
+            if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
+                ticketStatuses[msg.sender][bookingNumber][ticketIndex] = Coverage.TicketStatus({
                     processStatus: 0,
                     flightStatus: 0,
                     lastUpdated: 0,

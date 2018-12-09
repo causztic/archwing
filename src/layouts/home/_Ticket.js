@@ -42,19 +42,28 @@ class Ticket extends Component {
   }
   async pollBookingStatus(bookingNumber) {
     const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(
-      this.props.accounts[0], bookingNumber);
+      this.props.accounts[0], bookingNumber, 0);
+    const statusDataKey2 = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(
+      this.props.accounts[0], bookingNumber, 1);
     let i = 0;
+
     while (i < 20) {
-      if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
-        let { processStatus, ticketType } = this.props.contracts.FlightValidity.ticketStatuses[
-          statusDataKey
-        ].value;
-        return { bookingNumber, processStatus, ticketType };
+      if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses && statusDataKey2 in this.props.contracts.FlightValidity.ticketStatuses) {
+        let ticketType = 0;
+        let processStatus2 = null;
+        let { processStatus } = this.props.contracts.FlightValidity.ticketStatuses[statusDataKey].value;
+        let { set, processStatus: tempProcessStatus2 } = this.props.contracts.FlightValidity.ticketStatuses[statusDataKey2].value;
+        if (set) {
+          ticketType = 1;
+          processStatus = tempProcessStatus2;
+        }
+
+        return { bookingNumber, processStatus: [processStatus, processStatus2], ticketType };
       }
       i++;
       await delay(500);
     }
-    return { bookingNumber, processStatus: 0 };
+    return { bookingNumber, processStatus: [0, 0], ticketType: 0 };
   }
 
   async pollBookingNumbers() {
@@ -185,9 +194,19 @@ class Ticket extends Component {
     this.setState({ ticket1: null, ticket2: null });
   }
 
-  getBookingStatus = (processStatus) => {
+  getBookingStatusAndLabel = (processStatus) => {
     const processToLabel = ["pending", "invalid", "valid"];
-    return processToLabel[processStatus];
+    let statusLogo = <FontAwesomeIcon icon={faSyncAlt} color="gray" />;
+
+    let status = processToLabel[processStatus];
+
+    if (status === "invalid") {
+      statusLogo = <FontAwesomeIcon icon={faTimes} color="red" />;
+    } else if (status === "valid") {
+      statusLogo = <FontAwesomeIcon icon={faCheck} color="green" />;
+    }
+
+    return [statusLogo, status];
   }
 
   removeReturnTicket = () => {
@@ -202,23 +221,24 @@ class Ticket extends Component {
         && this.state.bookings.length) {
       for (let booking of this.state.bookings) {
         const pointReq = booking.ticketType === 0 ? 100 : 150;
-        let status = this.getBookingStatus(booking.processStatus);
-        let statusLogo = <FontAwesomeIcon icon={faSyncAlt} color="gray" />;
         let pointsStatus = this.props.points >= pointReq ? "valid" : "pending";
+        let statusLogo2 = null;
+        let status2 = null;
 
-        if (status === "invalid") {
-          statusLogo = <FontAwesomeIcon icon={faTimes} color="red" />;
-        } else if (status === "valid") {
-          statusLogo = <FontAwesomeIcon icon={faCheck} color="green" />;
+        const [statusLogo1, status1] = this.getBookingStatusAndLabel(booking.processStatus[0]);
+
+        if (booking.processStatus[1] !== null) {
+          [statusLogo2, status2] = this.getBookingStatusAndLabel(booking.processStatus[1]);
         }
 
         ticketViewer.push(
           <div className="pending-ticket" key={booking.bookingNumber}>
             <div className="booking-number">
-              {statusLogo}
+              {statusLogo1}
+              {statusLogo2}
               {Web3.utils.toAscii(booking.bookingNumber)}
             </div>
-            { status === "valid" ?
+            { status1 === "valid" && (status2 === null || status2 === "valid") ?
               <>
                 <button
                   className="pure-button process-status valid"
@@ -229,7 +249,7 @@ class Ticket extends Component {
                 <button
                   className={`pure-button process-status ${pointsStatus}}`}
                   disabled={pointsStatus === "pending"}
-                  onClick={() => this.insureFor(booking.bookingNumber, true)}
+                  onClick={() => this.insureFor(booking, true)}
                 >
                   Use AWPoints
                 </button>
