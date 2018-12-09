@@ -62,13 +62,11 @@ contract FlightValidity is usingOraclize {
             if (block.timestamp < departureTime) {
                 processStatus = 2;
             }
+        } 
 
-            ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
-            ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
-            ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
-        } else {
-            revert("Error fetching JSON");
-        }
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
