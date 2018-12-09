@@ -21,9 +21,10 @@ class Coverage extends Component {
     this.updateCoverages();
   }
 
-  async pollCoverageStatus(bookingNumber) {
+  async pollCoverageStatus(bookingNumber, tripIndex) {
     const statusDataKey = this.contracts.UserInfo.methods.getInsurance.cacheCall(
-      bookingNumber
+      bookingNumber,
+      tripIndex
     );
     let i = 0;
     while (i < 20) {
@@ -38,29 +39,31 @@ class Coverage extends Component {
       i++;
       await delay(500);
     }
-    return { bookingNumber, claimStatus: 0 };
+    return { bookingNumber, tripIndex, claimStatus: 0 };
   }
 
-  async pollFlightStatus(bookingNumber) {
+  async pollFlightStatus(bookingNumber, tripIndex) {
     const statusDataKey = this.contracts.FlightValidity.methods.ticketStatuses.cacheCall(
       this.props.accounts[0],
-      bookingNumber
+      bookingNumber,
+      tripIndex
     );
     let i = 0;
     while (i < 20) {
       if (statusDataKey in this.props.contracts.FlightValidity.ticketStatuses) {
         let {
-          flightStatus
+          flightStatus,
+          set
         } = this.props.contracts.FlightValidity.ticketStatuses[
           statusDataKey
         ].value;
-        flightStatus = BigNumber(flightStatus).toNumber();
-        return { bookingNumber, flightStatus };
+        flightStatus = set ? BigNumber(flightStatus).toNumber() : -1;
+        return { bookingNumber, tripIndex, flightStatus };
       }
       i++;
       await delay(500);
     }
-    return { bookingNumber, flightStatus: 0 };
+    return { bookingNumber, tripIndex, flightStatus: 0 };
   }
 
   // similar to ticket, but we are getting the flight statuses.
@@ -75,8 +78,8 @@ class Coverage extends Component {
         let bookingNumbers = this.props.contracts.FlightValidity
           .getBookingNumbers[bookingDataKey].value;
         if (bookingNumbers) {
-          const statuses = bookingNumbers.map(this.pollFlightStatus, this);
-          const coverageMap = bookingNumbers.map(this.pollCoverageStatus, this);
+          const statuses = bookingNumbers.map(bookingNumber => this.pollFlightStatus(bookingNumber, 0)).concat(bookingNumbers.map(bookingNumber => this.pollFlightStatus(bookingNumber, 1)));
+          const coverageMap = bookingNumbers.map(bookingNumber => this.pollCoverageStatus(bookingNumber, 0)).concat(bookingNumbers.map(bookingNumber => this.pollCoverageStatus(bookingNumber, 1)));
           let bookings = await Promise.all(statuses);
           let coverages = await Promise.all(coverageMap);
           return { bookings, coverages };
@@ -91,13 +94,15 @@ class Coverage extends Component {
   }
 
   async pollPayouts() {
-    const payoutKey = this.contracts.UserInfo.methods.claims.cacheCall(this.props.accounts[0]);
+    const payoutKey = this.contracts.UserInfo.methods.claims.cacheCall(
+      this.props.accounts[0]
+    );
     let i = 0;
     while (i < 20) {
       if (payoutKey in this.props.contracts.UserInfo.claims) {
-        let payout = BigNumber(this.props.contracts.UserInfo.claims[
-          payoutKey
-        ].value).toNumber();
+        let payout = BigNumber(
+          this.props.contracts.UserInfo.claims[payoutKey].value
+        ).toNumber();
         return payout;
       }
       i++;
@@ -109,36 +114,42 @@ class Coverage extends Component {
   async updateCoverages() {
     this.setState({
       syncCoverages: true
-    })
+    });
     this.pollCoverages().then(data => {
       let coverages = {};
       if (data.coverages) {
         data.coverages
-        .filter(coverage => coverage.claimStatus !== -1)
-        .forEach(coverage => {
-          let flightStatus = data.bookings.find(
-            booking => booking.bookingNumber === coverage.bookingNumber
-          ).flightStatus;
-          coverages[coverage.bookingNumber] = {
-            claimStatus: coverage.claimStatus,
-            flightStatus
-          };
-        });
+          .filter(coverage => coverage.claimStatus !== -1)
+          .forEach(coverage => {
+            let bookings = data.bookings.filter(
+              booking => booking.bookingNumber === coverage.bookingNumber
+            );
+            for (let booking of bookings) {
+              if (booking && booking.flightStatus !== -1) {
+                coverages[`${Web3.utils.toAscii(coverage.bookingNumber)} ${booking.tripIndex === 0 ? '(INITIAL)' : '(RETURN)'}`] = {
+                  bookingNumber: coverage.bookingNumber,
+                  claimStatus:  coverage.claimStatus,
+                  flightStatus: booking.flightStatus,
+                  tripIndex:    booking.tripIndex
+                };
+              }
+            }
+          });
       }
       this.pollPayouts().then(payout => this.setState({ payout }));
       this.setState({ coverages });
     });
     await delay(1000);
     this.setState({ syncCoverages: false });
-  };
-
-  claimInsurance = (bookingNumber) => {
-    this.contracts.UserInfo.methods.claimInsurance.cacheSend(bookingNumber);
   }
+
+  claimInsurance = (bookingNumber, tripIndex) => {
+    this.contracts.UserInfo.methods.claimInsurance.cacheSend(bookingNumber, tripIndex);
+  };
 
   claimPayouts = () => {
     this.contracts.UserInfo.methods.claimPayouts.cacheSend();
-  }
+  };
 
   render() {
     let coverageItem = <p>Loading contracts..</p>;
@@ -146,9 +157,10 @@ class Coverage extends Component {
       if (Object.keys(this.state.coverages).length !== 0) {
         let coverageRows = [];
         for (let [
-          bookingNumber,
-          { claimStatus, flightStatus }
+          key,
+          { bookingNumber, claimStatus, flightStatus, tripIndex }
         ] of Object.entries(this.state.coverages)) {
+
           let payoutStatus = true;
           if (claimStatus < 2) {
             if (flightStatus === 2) {
@@ -160,7 +172,11 @@ class Coverage extends Component {
             }
           }
           let claimButton = (
-            <button className="pure-button" onClick={() => this.claimInsurance(bookingNumber)} disabled={payoutStatus}>
+            <button
+              className="pure-button"
+              onClick={() => this.claimInsurance(bookingNumber, tripIndex)}
+              disabled={payoutStatus}
+            >
               Claim Payout
             </button>
           );
@@ -171,8 +187,8 @@ class Coverage extends Component {
             flightStatusText = "CANCELLED";
           }
           coverageRows.push(
-            <tr key={bookingNumber}>
-              <td>{Web3.utils.toAscii(bookingNumber)}</td>
+            <tr key={key}>
+              <td>{key}</td>
               <td>{flightStatusText}</td>
               <td>{claimButton}</td>
             </tr>
@@ -190,8 +206,12 @@ class Coverage extends Component {
               </thead>
               <tbody>{coverageRows}</tbody>
             </table>
-            <br/>
-            <button className="pure-button valid pure-u-1-1" onClick={this.claimPayouts}>Withdraw Payout of {this.state.payout}</button>
+            <button
+              className="pure-button valid pure-u-1-1 submit-button"
+              onClick={this.claimPayouts}
+            >
+              Withdraw Payout of {this.state.payout}
+            </button>
           </>
         );
       } else {
@@ -213,7 +233,7 @@ class Coverage extends Component {
         ) : (
           undefined
         )}
-        <br/>
+        <br />
         {this.props.userLoading
           ? undefined
           : this.props.userExists

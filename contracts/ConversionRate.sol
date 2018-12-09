@@ -17,8 +17,7 @@ contract ConversionRate is usingOraclize {
         if (msg.sender != oraclize_cbAddress())
             revert("Wrong sender");
 
-        // this code will break if 1 ether ever drops below $100 or rises above $1000.
-        // however, we get to save some gas!
+        // this parsing will return 15000 for "150.00" for example
         price = parseInt(_result, 2);
         lastUpdated = block.timestamp;
 
@@ -30,7 +29,7 @@ contract ConversionRate is usingOraclize {
     }
 
     // Called when the contract is deployed by Truffle
-    // Should also be called periodically to update the conversion rate
+    // Should also be called periodically by the company to update the conversion rate
     function updateConversionToSGD() public payable {
         if (oraclize_getPrice("URL") > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");

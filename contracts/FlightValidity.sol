@@ -5,9 +5,11 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 import { Coverage } from "./Coverage.sol";
 
 contract FlightValidity is usingOraclize {
+    uint256 constant CUSTOM_CALLBACK_GAS = 230000;
 
     struct UserBooking {
         bytes8 bookingNumber;
+        uint8 ticketIndex;
         address userAddress;
         bool set;
     }
@@ -20,7 +22,7 @@ contract FlightValidity is usingOraclize {
     // but it is not a security vulnerability but a privacy issue. we could perform some hashing on the
     // booking numbers instead of storing them as-is.
     mapping (address => bytes8[]) private userBookings;
-    mapping (address => mapping(bytes8 => Coverage.TicketStatus)) public ticketStatuses;
+    mapping (address => mapping(bytes8 => mapping(uint8 => Coverage.TicketStatus))) public ticketStatuses;
 
     constructor() public payable {
         OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
@@ -32,8 +34,9 @@ contract FlightValidity is usingOraclize {
         // with the queryId completes
         require(flightMappings[queryId].set, "Invalid queryId");
 
-        bytes8 bookingNumber = flightMappings[queryId].bookingNumber;
         address userAddress = flightMappings[queryId].userAddress;
+        bytes8 bookingNumber = flightMappings[queryId].bookingNumber;
+        uint8 ticketIndex = flightMappings[queryId].ticketIndex;
 
         uint256 processStatus = 1;
         uint256 departureTime;
@@ -53,6 +56,7 @@ contract FlightValidity is usingOraclize {
 
             // Ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
+            // if (block.timestamp < departureTime && status == 0)
             // However, we left that condition check out so that we can use our mock endpoint, which does not have
             // dynamic status capabilities.
 
@@ -61,30 +65,32 @@ contract FlightValidity is usingOraclize {
             }
         }
 
-        ticketStatuses[userAddress][bookingNumber].processStatus = uint8(processStatus);
-        ticketStatuses[userAddress][bookingNumber].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].processStatus = uint8(processStatus);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].flightStatus = uint8(status);
+        ticketStatuses[userAddress][bookingNumber][ticketIndex].lastUpdated = block.timestamp;
 
         emit LogTicketStatus(bookingNumber, processStatus, departureTime);
         // Delete to prevent double calling
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber, bool returnTripBool) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, uint8 ticketIndex) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
-        if (oraclize_getPrice("URL") > address(this).balance) {
+
+        // ticketIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
+        if (oraclize_getPrice("URL", CUSTOM_CALLBACK_GAS) > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
-            string memory returnTripStr;
-            uint8 returnTrip;
-            if (returnTripBool) {
-                returnTripStr = "1";
-                returnTrip = 1;
+            string memory ticketIndexStr;
+            require(ticketIndex < 2, "ticketIndex can only be 0 or 1");
+            // 0 for to trip, 1 for return trip.
+            if (ticketIndex == 1) {
+                ticketIndexStr = "1";
             } else {
-                returnTripStr = "0";
-                returnTrip = 0;
+                ticketIndexStr = "0";
             }
 
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
@@ -94,23 +100,28 @@ contract FlightValidity is usingOraclize {
                     "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
                     bytes8ToString(bookingNumber),
                     "&return=",
-                    returnTripStr,
+                    ticketIndexStr,
                     ").ticket"
-                )
+                ),
+                CUSTOM_CALLBACK_GAS
             );
-            if (!ticketStatuses[msg.sender][bookingNumber].set) {
-                ticketStatuses[msg.sender][bookingNumber] = Coverage.TicketStatus({
+
+            if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
+                ticketStatuses[msg.sender][bookingNumber][ticketIndex] = Coverage.TicketStatus({
                     processStatus: 0,
-                    ticketType: returnTrip,
                     flightStatus: 0,
+                    lastUpdated: 0,
                     set: true
                 });
                 // need a way to prevent too many booking numbers to be added.
                 userBookings[msg.sender].push(bookingNumber);
+            } else {
+                ticketStatuses[msg.sender][bookingNumber][ticketIndex].processStatus = 0;
             }
 
             flightMappings[queryId] = UserBooking({
                 bookingNumber: bookingNumber,
+                ticketIndex: ticketIndex,
                 userAddress: msg.sender,
                 set: true
             });

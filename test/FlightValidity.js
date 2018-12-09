@@ -4,12 +4,15 @@ const { promisifyLogWatch } = require("./utils");
 const FlightValidity = artifacts.require('FlightValidity');
 const UserInfo = artifacts.require('UserInfo');
 
+const EXTRA_GAS = 4.6E15;
+
 const checkTicketStatus = (ticketStatus, expectedStatus) => {
-  assert.equal(ticketStatus.length, 4);
+  // Not checking the lastUpdated variable
+  assert.equal(ticketStatus.length, 5);
   assert.equal(expectedStatus.length, 3);
   for (let i = 0; i < 3; i++)
     assert.equal(ticketStatus[i].toNumber(), expectedStatus[i]);
-  assert.equal(ticketStatus[3], true);
+  assert.equal(ticketStatus[4], true);
 }
 
 contract('FlightValidity', (accounts) => {
@@ -21,9 +24,9 @@ contract('FlightValidity', (accounts) => {
     userInst = await UserInfo.deployed();
     defaultAcc = accounts[0];
     testTickets = [
-      {b: "AAAAG", r: false},  // booking number and return-trip
-      {b: "AAAA0", r: false},
-      {b: "AAAAA", r: false}
+      {b: "AAAAG", r: 0},  // booking number and return-trip
+      {b: "AAAA0", r: 0},
+      {b: "AAAAA", r: 0}
     ]
   })
   
@@ -32,7 +35,7 @@ contract('FlightValidity', (accounts) => {
   it("should return with valid process status if ticket is valid", async () => {
     await userInst.createUser();
     const ticket = testTickets[0];
-    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: 1E18 });
+    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: EXTRA_GAS });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -59,7 +62,7 @@ contract('FlightValidity', (accounts) => {
 
   it("should return with invalid process status if the ticket does not exist", async () => {
     const ticket = testTickets[1];
-    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: 1E18 });
+    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: EXTRA_GAS });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {
@@ -86,7 +89,7 @@ contract('FlightValidity', (accounts) => {
 
   it("should return with invalid process status if the ticket has expired", async () => {
     const ticket = testTickets[2];
-    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: 1E18 });
+    const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: EXTRA_GAS });
     assert.web3Event(response, {
       event: 'LogNewOraclizeQuery',
       args: {

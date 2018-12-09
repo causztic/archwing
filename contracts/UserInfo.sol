@@ -20,7 +20,7 @@ contract UserInfo {
     uint256 constant CANCELLED_PAYOUT = 500000e18;
 
     struct User {
-        mapping(bytes8 => Coverage.Insurance) insurances;
+        mapping(bytes8 => mapping(uint8 => Coverage.Insurance)) insurances;
         uint256 points;
         bool set;
     }
@@ -29,8 +29,7 @@ contract UserInfo {
     FlightValidity private fv;
 
     mapping(address => User) private users;
-    mapping(address => uint) public claims;
-    address private owner;
+    mapping(address => uint256) public claims;
     uint256 numInsurances;
 
     constructor(address conversionAddr, address flightAddr) public payable {
@@ -72,11 +71,13 @@ contract UserInfo {
 
     // INSURANCES
 
-    function getInsurance(bytes8 bookingNumber) external view returns (bytes8, uint256) {
+    function getInsurance(bytes8 bookingNumber, uint8 index) external view returns (bytes8, uint256) {
+        require(index < 2, "Insurance index only takes values {0, 1}");
+
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber][index];
         require(insurance.set, "Insurance not found.");
 
         return (bookingNumber, insurance.claimStatus);
@@ -86,76 +87,107 @@ contract UserInfo {
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
-        uint8 _status;
+        uint8 status;
         uint8 processStatus;
         bool ticketSet;
-        uint8 ticketType;
+        bool isRoundTrip;
+        uint256 lastUpdated;
 
-        (processStatus, ticketType, _status, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber);
-        require(ticketSet, "bookingNumber not found");
+        (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, 0);
+        // We have commented the below require() out because our API is currently static
+        // In actual scenario, this would have to be checked in order to buy insurance
+        // require(status == 0);
+
+        // We require the user to buy the insurance within 30 minutes of
+        // updating the ticket statuses to prevent fraud
+        require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
         require(processStatus == 2, "Invalid ticket status");
-        require(!user.insurances[bookingNumber].set, "You cannot buy multiple insurances for the same booking number");
 
-        // It is the user's responsibility to call the contract to update the conversion before buying the insurance.
+        (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, 1);
+        isRoundTrip = ticketSet;
+        if (isRoundTrip) {
+            require(processStatus == 2, "Invalid ticket status");
+            require(
+                !user.insurances[bookingNumber][1].set,
+                "Cannot buy multiple insurances for the same booking number"
+            );
+        }
+
+        require(
+            !user.insurances[bookingNumber][0].set,
+            "Cannot buy multiple insurances for the same booking number"
+        );
+
+
+        // It is the company's responsibility to keep this conversion rate updated
         uint256 rate = cr.getConversionToSGD();
         assert(rate > 0);
         // Ensure that the company has enough to pay for all cancelled tickets
-        // Currently doesnt remove insurances that have expired tho
+        // there should be a better way, but this for now ensures fairness
         uint256 maxTotalPayout = (numInsurances + 1) * CANCELLED_PAYOUT;
         require((maxTotalPayout / rate) <= getBalance(), "Company is broke! Don't buy from us.");
 
         if (buyWithLoyalty) {
             // Buy with points
-            uint256 pointsToDeduct = ROUNDTRIP_PRICE_POINTS;
-            if (ticketType == 0) {
-                pointsToDeduct = SINGLETRIP_PRICE_POINTS;
+            uint256 pointsToDeduct = SINGLETRIP_PRICE_POINTS;
+            if (isRoundTrip) {
+                pointsToDeduct = ROUNDTRIP_PRICE_POINTS;
             }
 
             require(user.points >= pointsToDeduct, "Not enough points to buy insurance");
             user.points -= pointsToDeduct;
         } else {
             // Buy normally
-            uint256 price = ROUNDTRIP_PRICE_SGD;
-            if (ticketType == 0) {
-                price = SINGLETRIP_PRICE_SGD;
+            uint256 price = SINGLETRIP_PRICE_SGD;
+            if (isRoundTrip) {
+                price = ROUNDTRIP_PRICE_SGD;
             }
 
             // e.g. price is 15000 for $150 per ether
-            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000.
+            // If $30, $30/$150 would be 0.2 ether. to avoid floating points, or 3000/15000
             // we do 3000*(1e18-1e15)/15000 = 200 finney == 0.2 ether
             // With this reasoning, we can do 3000e18/15000 to obtain the same value in wei
             price = price / rate;
             require(msg.value >= price, "Not enough money!");
 
             // Loyalty reward at the end
-            if (ticketType == 0) {
-                user.points += SINGLETRIP_REWARD_POINTS;
-            } else {
+            if (isRoundTrip) {
                 user.points += ROUNDTRIP_REWARD_POINTS;
+            } else {
+                user.points += SINGLETRIP_REWARD_POINTS;
             }
         }
 
-        user.insurances[bookingNumber] = Coverage.Insurance({
+        user.insurances[bookingNumber][0] = Coverage.Insurance({
             claimStatus: 0,
             set: true
         });
-
         numInsurances += 1;
+
+        if (isRoundTrip) {
+            user.insurances[bookingNumber][1] = Coverage.Insurance({
+                claimStatus: 0,
+                set: true
+            });
+            numInsurances += 1;
+        }
     }
 
     // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
     // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
-    function claimInsurance(bytes8 bookingNumber) public {
+    function claimInsurance(bytes8 bookingNumber, uint8 index) public {
+        // require(index == 0 || index == 1, "Insurance index only takes values {0, 1}"); uneeded check as any invalid index will be caught later
+
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
 
         uint8 _processStatus;
-        uint8 _ticketType;
         bool _set;
+        uint256 _lastUpdated;
         uint8 status;
 
-        (_processStatus, _ticketType, status, _set) = fv.ticketStatuses(msg.sender, bookingNumber);
-        Coverage.Insurance storage insurance = user.insurances[bookingNumber];
+        (_processStatus, status, _lastUpdated, _set) = fv.ticketStatuses(msg.sender, bookingNumber, index);
+        Coverage.Insurance storage insurance = user.insurances[bookingNumber][index];
         require(insurance.set, "Insurance not found.");
         // status = 0 is normal and cannot be claimed
         require(status == 1 || status == 2, "Cannot claim flights that are on schedule.");

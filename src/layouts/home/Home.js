@@ -21,16 +21,20 @@ class Home extends Component {
       points: 0,
       userLoading: true,
       userExists: false,
+      createAccStatus: "none"
     }
     this.contracts = context.drizzle.contracts;
+    this.drizzle = context.drizzle;
   }
 
   componentDidMount() {
     this.pollUser().then((userExists) => {
       this.setState({ userExists, userLoading: false});
-      this.pollPoints().then((points) => {
-        this.setState({ points });
-      });
+      if (userExists) {
+        this.pollPoints().then((points) => {
+          this.setState({ points });
+        });
+      }
     })
   }
 
@@ -64,19 +68,53 @@ class Home extends Component {
     return 0;
   }
 
-  createAccount = () => {
-    this.contracts.UserInfo.methods.createUser.cacheSend();
+  async createAccount() {
+    const stackId = this.contracts.UserInfo.methods.createUser.cacheSend();
+    let i = 0;
+    while (i < 50) {
+      let state = this.drizzle.store.getState();
+      if (state.transactionStack[stackId]) {
+        const txHash = state.transactionStack[stackId];
+        const txStatus = state.transactions[txHash].status;
+        if (txStatus === "success") {
+          this.setState({createAccStatus: "done"});
+          this.setState({userExists: true});
+          return;
+        } else if (txStatus === "pending") {
+          this.setState({createAccStatus: "pending"});
+        } else {
+          this.setState({createAccStatus: "error"});
+        }
+      }
+      i++;
+      await delay(500);
+    }
   };
 
   render() {
     const createAccountButton = (
       <button
         className="pure-button pure-button-primary"
-        onClick={this.createAccount}
+        onClick={this.createAccount.bind(this)}
       >
         Create your account now!
       </button>
     );
+
+    const createAccountDiv = () => {
+      switch (this.state.createAccStatus) {
+        case "none":
+          return createAccountButton;
+        case "pending":
+          return "Creating account...";
+        case "done":
+          return undefined;
+        case "error":
+          return "Error creating account";
+        default:
+          return "WHAT?!";
+      }
+    }
 
     return (
       <main className="container">
@@ -106,7 +144,7 @@ class Home extends Component {
                 ? undefined
                 : this.state.userExists
                 ? undefined
-                : createAccountButton}
+                : createAccountDiv()}
             </div>
             <a href="#instant-coverage">
               <div className="bouncing-arrow">
@@ -115,7 +153,14 @@ class Home extends Component {
             </a>
           </div>
           <div className="pure-u-1-1 hero-container" id="instant-coverage">
-            <Ticket points={this.state.points} accounts={this.props.accounts} contracts={this.props.contracts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton}/>
+            <Ticket
+              points={this.state.points}
+              accounts={this.props.accounts}
+              contracts={this.props.contracts}
+              userLoading={this.state.userLoading}
+              userExists={this.state.userExists}
+              createAccountButton={createAccountDiv()}
+            />
             <a href="#loyalty-points">
               <div className="bouncing-arrow">
                 <FontAwesomeIcon icon={faChevronDown} size="lg" />
@@ -131,7 +176,7 @@ class Home extends Component {
               ) : this.state.userExists ? (
                 <p>You currently have {this.state.points} AWPoints.</p>
               ) : (
-                createAccountButton
+                createAccountDiv()
               )}
             </div>
             <a href="#claim-payouts">
@@ -142,7 +187,13 @@ class Home extends Component {
           </div>
           <div className="pure-u-1-1 hero-container" id="claim-payouts">
             <div className="pure-u-1-2 hero">
-              <Coverage contracts={this.props.contracts} accounts={this.props.accounts} userLoading={this.state.userLoading} userExists={this.state.userExists} createAccountButton={createAccountButton} />
+              <Coverage
+                contracts={this.props.contracts}
+                accounts={this.props.accounts}
+                userLoading={this.state.userLoading}
+                userExists={this.state.userExists}
+                createAccountButton={createAccountDiv()}
+              />
             </div>
           </div>
         </div>
