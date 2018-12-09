@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import { delay } from 'redux-saga';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSync, faSyncAlt, faCross, faCheck
+  faSync, faSyncAlt, faCheck, faTimesCircle, faTimes
 } from "@fortawesome/free-solid-svg-icons";
 
 import { parseTicketPDF } from '../../util/ticket';
@@ -171,7 +171,7 @@ class Ticket extends Component {
     if (this.state.returnTrip) {
       bookingNum2 = Web3.utils.fromAscii(this.state.ticket2.resCode);
       if (bookingNum1 !== bookingNum2) {
-        console.log("The two booking numbers are not the same!");
+        alert("The two booking numbers are not the same!");
         return;
       }
     }
@@ -191,6 +191,10 @@ class Ticket extends Component {
     return processToLabel[processStatus];
   }
 
+  removeReturnTicket = () => {
+    this.setState({ ticket2: null, returnTrip: false });
+  }
+
   render() {
     let ticketViewer = [];
     if (this.state.syncBookings) {
@@ -204,7 +208,7 @@ class Ticket extends Component {
         let pointsStatus = this.props.points >= pointReq ? "valid" : "pending";
 
         if (status === "invalid") {
-          statusLogo = <FontAwesomeIcon icon={faCross} color="red" />;
+          statusLogo = <FontAwesomeIcon icon={faTimes} color="red" />;
         } else if (status === "valid") {
           statusLogo = <FontAwesomeIcon icon={faCheck} color="green" />;
         }
@@ -285,7 +289,7 @@ class Ticket extends Component {
                   </label>
                 </div>
                 <div className="pure-u-2-5 ticket-label">
-                  {this.state.ticket2 ? this.state.ticket2.resCode : <div className="unfilled">Booking Number</div>}
+                  {this.state.ticket2 ? <div>{this.state.ticket2.resCode}<FontAwesomeIcon className="remove-icon" icon={faTimesCircle} onClick={this.removeReturnTicket}></FontAwesomeIcon></div> : <div className="unfilled">Booking Number</div>}
                 </div>
                 <div className="pure-u-3-5">
                   <input id="uploadReturnTicket" type="file" onChange={(event) => this.handleFileChosen(event, 2)} disabled={this.state.ticket1 === null} />
