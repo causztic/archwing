@@ -34,8 +34,14 @@ contract UserInfo {
 
     constructor(address conversionAddr, address flightAddr) public payable {
         require(msg.value > 250 ether, "Put in at least 250 ether as seed fund");
+        owner = msg.sender;
         cr = ConversionRate(conversionAddr);
         fv = FlightValidity(flightAddr);
+    }
+
+    function addFunds() external payable {
+        require(owner == msg.sender);
+        require(msg.value > 0);
     }
 
     function getBalance() public view returns (uint256) {

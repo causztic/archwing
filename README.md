@@ -74,8 +74,7 @@ After starting up the dApp:
 To run any test suites, use the following:
 
 ```sh
-truffle test  # for contract testing
-npm run test  # for React testing
+truffle test  # for contract testing. yes we actually wrote tests.
 ```
 
 ## Building
@@ -83,6 +82,10 @@ npm run test  # for React testing
 ```sh
 npm run build
 ```
+
+## Report
+
+Check the wiki pages for all the report stuff and requirements for this project.
 
 # Notable Changes
 07/12/18 - Refactoring to decrease gas used on `FlightValidity.checkFlightDetails` by 130k.
