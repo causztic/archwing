@@ -8,7 +8,6 @@ library Coverage {
 
     struct TicketStatus {
         uint8 processStatus;  // 0 - pending, 1 - invalid, 2 - valid
-        uint8 ticketType;     // 0 - single,  1 - round-trip-go, 2 - round-trip-back
         uint8 flightStatus;   // 0 - normal,  1 - delayed, 2 - cancelled
         uint256 lastUpdated;  // staleness check
         bool  set;

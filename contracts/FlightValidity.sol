@@ -56,6 +56,7 @@ contract FlightValidity is usingOraclize {
 
             // Ideally we should also check that the ticket beforehand was already delayed / cancelled, to prevent
             // people from purchasing future tickets that have already been cancelled.
+            // if (block.timestamp < departureTime && status == 0)
             // However, we left that condition check out so that we can use our mock endpoint, which does not have
             // dynamic status capabilities.
 
@@ -73,22 +74,23 @@ contract FlightValidity is usingOraclize {
         delete flightMappings[queryId];
     }
 
-    function checkFlightDetails(bytes8 bookingNumber, uint8 returnTrip) external payable {
+    function checkFlightDetails(bytes8 bookingNumber, uint8 tripIndex) external payable {
         // Assumption: bookingNumber is a unique identifier of ticket
         // This could be extended to actual e-ticket IDs if needed, but we are
         // using booking number only for convenience
+
+        // tripIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
         if (oraclize_getPrice("URL", CUSTOM_CALLBACK_GAS) > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
-            string memory returnTripStr;
-            require(returnTrip <= 2, "returnTrip can only be 0, 1 or 2");
-            if (returnTrip == 2) {
-                returnTripStr = "2";
-            } else if (returnTrip == 1) {
-                returnTripStr = "1";
+            string memory tripIndexStr;
+            require(tripIndex == 0 || tripIndex == 1, "tripIndex can only be 0 or 1");
+            // 0 for to trip, 1 for return trip.
+            if (tripIndex == 1) {
+                tripIndexStr = "1";
             } else {
-                returnTripStr = "0";
+                tripIndexStr = "0";
             }
 
             emit LogNewOraclizeQuery("Oraclize query was sent, standing by for the answer..");
@@ -98,17 +100,15 @@ contract FlightValidity is usingOraclize {
                     "json(https://archwing-bookings.herokuapp.com/ticket?booking_number=",
                     bytes8ToString(bookingNumber),
                     "&return=",
-                    returnTripStr,
+                    tripIndexStr,
                     ").ticket"
                 ),
                 CUSTOM_CALLBACK_GAS
             );
-            
-            uint8 ticketIndex = returnTrip == 2 ? 1 : 0;
-            if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
-                ticketStatuses[msg.sender][bookingNumber][ticketIndex] = Coverage.TicketStatus({
+
+            if (!ticketStatuses[msg.sender][bookingNumber][tripIndex].set) {
+                ticketStatuses[msg.sender][bookingNumber][tripIndex] = Coverage.TicketStatus({
                     processStatus: 0,
-                    ticketType: returnTrip,
                     flightStatus: 0,
                     lastUpdated: 0,
                     set: true
