@@ -34,7 +34,6 @@ contract('FlightValidity', (accounts) => {
   // can be mitigated by having a fixed unused booking number with a very long age.
   it("should return with valid process status if ticket is valid", async () => {
     await userInst.createUser();
-    console.log(userInst.address);
     const ticket = testTickets[0];
     const response = await flightInst.checkFlightDetails(ticket.b, ticket.r, { value: EXTRA_GAS });
     assert.web3Event(response, {
