@@ -11,7 +11,7 @@ import {
 import { parseTicketPDF } from '../../util/ticket';
 
 // Gas needed for Oraclize and respective callback
-const EXTRA_GAS = 4.6E15
+const EXTRA_GAS = 4.6E16
 const SINGLE_TRIP_PRICE = 2000E18 + EXTRA_GAS
 const ROUND_TRIP_PRICE  = 3000E18 + EXTRA_GAS
 
