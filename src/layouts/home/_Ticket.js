@@ -185,9 +185,8 @@ class Ticket extends Component {
       }
     }
 
-    const ticketType = this.state.returnTrip ? 1 : 0;
     this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(
-      bookingNum1, ticketType, { value: EXTRA_GAS });
+      bookingNum1, 0, { value: EXTRA_GAS });
     if (this.state.returnTrip) {
       this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(
         bookingNum2, 1, { value: EXTRA_GAS });
