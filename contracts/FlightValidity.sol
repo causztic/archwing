@@ -5,7 +5,7 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 import { Coverage } from "./Coverage.sol";
 
 contract FlightValidity is usingOraclize {
-    uint256 constant CUSTOM_CALLBACK_GAS = 300000;
+    uint256 constant CUSTOM_CALLBACK_GAS = 230000;
 
     struct UserBooking {
         bytes8 bookingNumber;
