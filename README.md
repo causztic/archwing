@@ -88,5 +88,5 @@ npm run build
 Check the [wiki pages](https://github.com/causztic/archwing/wiki) for all the report stuff and requirements for this project.
 
 # Notable Changes
-07/12/18 - Refactoring to decrease gas used on `FlightValidity.checkFlightDetails` by 130k.
-09/12/18 - Add return trip ticket support.
+* 07/12/18 - Refactoring to decrease gas used on `FlightValidity.checkFlightDetails` by 130k.
+* 09/12/18 - Add return trip ticket support.
