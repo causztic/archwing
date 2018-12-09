@@ -126,7 +126,7 @@ class Coverage extends Component {
             );
             for (let booking of bookings) {
               if (booking && booking.flightStatus !== -1) {
-                coverages[`${coverage.bookingNumber}_${booking.tripIndex}`] = {
+                coverages[`${Web3.utils.toAscii(coverage.bookingNumber)} ${booking.tripIndex === 0 ? '(INITIAL)' : '(RETURN)'}`] = {
                   bookingNumber: coverage.bookingNumber,
                   claimStatus:  coverage.claimStatus,
                   flightStatus: booking.flightStatus,
@@ -188,7 +188,7 @@ class Coverage extends Component {
           }
           coverageRows.push(
             <tr key={key}>
-              <td>{Web3.utils.toAscii(bookingNumber)}</td>
+              <td>{key}</td>
               <td>{flightStatusText}</td>
               <td>{claimButton}</td>
             </tr>
