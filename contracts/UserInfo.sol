@@ -28,6 +28,7 @@ contract UserInfo {
     ConversionRate private cr;
     FlightValidity private fv;
 
+    address owner;
     mapping(address => User) private users;
     mapping(address => uint256) public claims;
     uint256 numInsurances;
@@ -40,8 +41,8 @@ contract UserInfo {
     }
 
     function addFunds() external payable {
-        require(owner == msg.sender);
-        require(msg.value > 0);
+        require(owner == msg.sender, "Not owner");
+        require(msg.value > 0, "Value must be more than 0");
     }
 
     function getBalance() public view returns (uint256) {
