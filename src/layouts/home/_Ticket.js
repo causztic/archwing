@@ -123,7 +123,7 @@ class Ticket extends Component {
   async insureFor(booking, loyaltyPoints) {
     const price = parseInt(booking.ticketType) === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
     this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber,
-      loyaltyPoints, { value: price / (this.state.conversionRate - 20000) });
+      loyaltyPoints, { value: price / (this.state.conversionRate) });
   }
 
   handleFileChosen = (event, ticketIndex = 1) => {
