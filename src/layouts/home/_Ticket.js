@@ -112,8 +112,7 @@ class Ticket extends Component {
   }
 
   async insureFor(booking, loyaltyPoints) {
-    // loose equality to check whether it is either 0 or '0' because laziness
-    const price = booking.ticketType == 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
+    const price = parseInt(booking.ticketType) === 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
     this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber,
       loyaltyPoints, { value: price / (this.state.conversionRate) });
   }
