@@ -115,6 +115,8 @@ contract FlightValidity is usingOraclize {
                 });
                 // need a way to prevent too many booking numbers to be added.
                 userBookings[msg.sender].push(bookingNumber);
+            } else {
+                ticketStatuses[msg.sender][bookingNumber][ticketIndex].processStatus = 0;
             }
 
             flightMappings[queryId] = UserBooking({

@@ -52,10 +52,11 @@ class Ticket extends Component {
         let ticketType = 0;
         let processStatus2 = null;
         let { processStatus } = this.props.contracts.FlightValidity.ticketStatuses[statusDataKey].value;
+        console.log(processStatus);
         let { set, processStatus: tempProcessStatus2 } = this.props.contracts.FlightValidity.ticketStatuses[statusDataKey2].value;
         if (set) {
           ticketType = 1;
-          processStatus = tempProcessStatus2;
+          processStatus2 = tempProcessStatus2;
         }
 
         return { bookingNumber, processStatus: [processStatus, processStatus2], ticketType };
@@ -189,7 +190,7 @@ class Ticket extends Component {
       bookingNum1, ticketType, { value: EXTRA_GAS });
     if (this.state.returnTrip) {
       this.contracts.FlightValidity.methods.checkFlightDetails.cacheSend(
-        bookingNum2, 2, { value: EXTRA_GAS });
+        bookingNum2, 1, { value: EXTRA_GAS });
     }
     this.setState({ ticket1: null, ticket2: null });
   }
