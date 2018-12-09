@@ -4,7 +4,10 @@ import "jsmnsol-lib/JsmnSolLib.sol";
 
 import { Coverage } from "./Coverage.sol";
 
+
 contract FlightValidity is usingOraclize {
+    uint256 constant CALLBACK_GAS = 230000;
+
     struct UserBooking {
         bytes8 bookingNumber;
         uint8 ticketIndex;
@@ -40,7 +43,8 @@ contract FlightValidity is usingOraclize {
         uint256 departureTime;
         uint256 status;
         bytes memory _res = bytes(result);
-        if (_res[0] == "{") {
+        bytes memory _brack = hex"7b";
+        if (_res[0] == _brack[0]) {
             // Parse resulting JSON string
             uint returnVal;
             JsmnSolLib.Token[] memory tokens;
@@ -79,7 +83,7 @@ contract FlightValidity is usingOraclize {
         // using booking number only for convenience
 
         // ticketIndex is 0 for TO, 1 for FRO. if 1 does not exist, we assume it is a single trip.
-        if (oraclize_getPrice("URL") > address(this).balance) {
+        if (oraclize_getPrice("URL", CALLBACK_GAS) > address(this).balance) {
             emit LogNewOraclizeQuery("Oraclize query not sent, not enough ETH");
             revert("Oraclize query not sent, not enough ETH");
         } else {
@@ -101,7 +105,8 @@ contract FlightValidity is usingOraclize {
                     "&return=",
                     ticketIndexStr,
                     ").ticket"
-                )
+                ),
+                CALLBACK_GAS
             );
 
             if (!ticketStatuses[msg.sender][bookingNumber][ticketIndex].set) {
