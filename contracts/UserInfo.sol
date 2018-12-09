@@ -164,7 +164,7 @@ contract UserInfo {
     // We follow this tutorial to ensure safe transfers to avoid re-entrancy and attacks discussed in class.
     // https://consensys.github.io/smart-contract-best-practices/recommendations/#favor-pull-over-push-for-external-calls
     function claimInsurance(bytes8 bookingNumber, uint8 index) public {
-        require(index == 0 || index == 1, "Insurance index only takes values {0, 1}");
+        // require(index == 0 || index == 1, "Insurance index only takes values {0, 1}"); uneeded check as any invalid index will be caught later
 
         User storage user = users[msg.sender];
         require(user.set, "User is not set");
