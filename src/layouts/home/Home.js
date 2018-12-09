@@ -30,9 +30,11 @@ class Home extends Component {
   componentDidMount() {
     this.pollUser().then((userExists) => {
       this.setState({ userExists, userLoading: false});
-      this.pollPoints().then((points) => {
-        this.setState({ points });
-      });
+      if (userExists) {
+        this.pollPoints().then((points) => {
+          this.setState({ points });
+        });
+      }
     })
   }
 
@@ -98,7 +100,7 @@ class Home extends Component {
         Create your account now!
       </button>
     );
-    
+
     const createAccountDiv = () => {
       switch (this.state.createAccStatus) {
         case "none":
@@ -154,9 +156,9 @@ class Home extends Component {
             <Ticket
               points={this.state.points}
               accounts={this.props.accounts}
-              contracts={this.props.contracts} 
-              userLoading={this.state.userLoading} 
-              userExists={this.state.userExists} 
+              contracts={this.props.contracts}
+              userLoading={this.state.userLoading}
+              userExists={this.state.userExists}
               createAccountButton={createAccountDiv()}
             />
             <a href="#loyalty-points">

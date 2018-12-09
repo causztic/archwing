@@ -190,8 +190,7 @@ class Coverage extends Component {
               </thead>
               <tbody>{coverageRows}</tbody>
             </table>
-            <br/>
-            <button className="pure-button valid pure-u-1-1" onClick={this.claimPayouts}>Withdraw Payout of {this.state.payout}</button>
+            <button className="pure-button valid pure-u-1-1 submit-button" onClick={this.claimPayouts}>Withdraw Payout of {this.state.payout}</button>
           </>
         );
       } else {

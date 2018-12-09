@@ -112,13 +112,13 @@ class Ticket extends Component {
   }
 
   async insureFor(booking, loyaltyPoints) {
-    // we pad the exchange rate to take care of any last minute conversion rate changes.
+    // loose equality to check whether it is either 0 or '0' because laziness
     const price = booking.ticketType == 0 ? SINGLE_TRIP_PRICE : ROUND_TRIP_PRICE;
     this.contracts.UserInfo.methods.buyInsurance.cacheSend(booking.bookingNumber,
       loyaltyPoints, { value: price / (this.state.conversionRate) });
   }
 
-  handleFileChosen = (event) => {
+  handleFileChosen = (event, ticketIndex = 1) => {
     const ticketComponent = this;
     const file = event.target.files[0];
 
@@ -145,8 +145,11 @@ class Ticket extends Component {
           });
         });
         return pagePromise.then((text) => {
-          ticketComponent.setState({ ticket1: parseTicketPDF(text) });
-          console.log(ticketComponent.state.ticket1);
+          if (ticketIndex === 2) {
+            ticketComponent.setState({ returnTrip: true });
+          }
+          ticketComponent.setState({ [`ticket${ticketIndex}`]: parseTicketPDF(text) });
+          console.log(ticketComponent.state[`ticket${ticketIndex}`]);
         });
       });
     }
@@ -271,10 +274,29 @@ class Ticket extends Component {
                 <p>Upload your Ticket PDF</p>
                 Note: There is a processing fee for the ticket
               </pre>
-              <input type="file" onChange={this.handleFileChosen} />
-              <button className="pure-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
-                Submit
-              </button>
+              <div className="pure-u-1-2">
+                <div className="pure-u-2-5 ticket-label">
+                  {this.state.ticket1 ? this.state.ticket1.resCode : <div className="unfilled">Booking Number</div>}
+                </div>
+                <div className="pure-u-3-5">
+                  <input id="uploadFirstTicket" type="file" onChange={this.handleFileChosen} />
+                  <label htmlFor="uploadFirstTicket" className="pure-button valid pure-u-1-1">
+                    Add First Ticket
+                  </label>
+                </div>
+                <div className="pure-u-2-5 ticket-label">
+                  {this.state.ticket2 ? this.state.ticket2.resCode : <div className="unfilled">Booking Number</div>}
+                </div>
+                <div className="pure-u-3-5">
+                  <input id="uploadReturnTicket" type="file" onChange={(event) => this.handleFileChosen(event, 2)} disabled={this.state.ticket1 === null} />
+                  <label htmlFor="uploadReturnTicket" className="pure-button valid pure-u-1-1" disabled={this.state.ticket1 === null}>
+                    Add Return Trip Ticket
+                  </label>
+                </div>
+                <button className="pure-button pure-u-1-1 submit-button" onClick={this.submitFile} disabled={this.state.ticket1 === null}>
+                  Submit
+                </button>
+              </div>
             </>)}
         </div>
         <div className="pure-u-3-5 hero">
