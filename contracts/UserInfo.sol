@@ -94,7 +94,7 @@ contract UserInfo {
 
         // We require the user to buy the insurance within 30 minutes of
         // updating the ticket statuses to prevent fraud
-        // require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
+        require(block.timestamp < lastUpdated + 1800, "Ticket status is stale");
         require(processStatus == 2, "Invalid ticket status");
 
         (processStatus, status, lastUpdated, ticketSet) = fv.ticketStatuses(msg.sender, bookingNumber, 1);
