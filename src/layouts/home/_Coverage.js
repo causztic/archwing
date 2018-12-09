@@ -121,15 +121,18 @@ class Coverage extends Component {
         data.coverages
           .filter(coverage => coverage.claimStatus !== -1)
           .forEach(coverage => {
-            let booking = data.bookings.find(
+            let bookings = data.bookings.filter(
               booking => booking.bookingNumber === coverage.bookingNumber
             );
-            if (booking && booking.flightStatus !== -1) {
-              coverages[coverage.bookingNumber] = {
-                claimStatus:  coverage.claimStatus,
-                flightStatus: booking.flightStatus,
-                tripIndex:    booking.tripIndex
-              };
+            for (let booking of bookings) {
+              if (booking && booking.flightStatus !== -1) {
+                coverages[`${coverage.bookingNumber}_${booking.tripIndex}`] = {
+                  bookingNumber: coverage.bookingNumber,
+                  claimStatus:  coverage.claimStatus,
+                  flightStatus: booking.flightStatus,
+                  tripIndex:    booking.tripIndex
+                };
+              }
             }
           });
       }
@@ -154,9 +157,10 @@ class Coverage extends Component {
       if (Object.keys(this.state.coverages).length !== 0) {
         let coverageRows = [];
         for (let [
-          bookingNumber,
-          { claimStatus, flightStatus, tripIndex }
+          key,
+          { bookingNumber, claimStatus, flightStatus, tripIndex }
         ] of Object.entries(this.state.coverages)) {
+
           let payoutStatus = true;
           if (claimStatus < 2) {
             if (flightStatus === 2) {
@@ -183,7 +187,7 @@ class Coverage extends Component {
             flightStatusText = "CANCELLED";
           }
           coverageRows.push(
-            <tr key={bookingNumber}>
+            <tr key={key}>
               <td>{Web3.utils.toAscii(bookingNumber)}</td>
               <td>{flightStatusText}</td>
               <td>{claimButton}</td>
